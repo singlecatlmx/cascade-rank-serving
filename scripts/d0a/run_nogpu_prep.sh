@@ -49,11 +49,15 @@ python -m pip freeze > env/env_baseline.txt
 python - <<'PY'
 from importlib.metadata import version
 from pathlib import Path
+import torch
 
 versions = {name: version(name) for name in ("torch", "vllm", "transformers")}
-print(versions)
-if versions["torch"] != "2.11.0+cu130":
-    raise SystemExit(f"unexpected torch version: {versions['torch']}")
+print("package metadata:", versions)
+print("torch runtime:", torch.__version__)
+if versions["torch"] != "2.11.0":
+    raise SystemExit(f"unexpected torch metadata version: {versions['torch']}")
+if torch.__version__ != "2.11.0+cu130":
+    raise SystemExit(f"unexpected torch runtime version: {torch.__version__}")
 if versions["vllm"] != "0.25.1":
     raise SystemExit(f"unexpected vllm version: {versions['vllm']}")
 Path("env/constraints.txt").write_text(
@@ -92,13 +96,16 @@ python -m pip install \
 
 python - <<'PY' | tee "$LOG_DIR/versions_after_install.log"
 import importlib.metadata as md
+import torch
 
 for name in (
     "torch", "vllm", "transformers", "modelscope", "peft",
     "accelerate", "datasets", "kagglehub",
 ):
     print(f"{name}=={md.version(name)}")
-assert md.version("torch") == "2.11.0+cu130"
+print("torch runtime:", torch.__version__)
+assert md.version("torch") == "2.11.0"
+assert torch.__version__ == "2.11.0+cu130"
 assert md.version("vllm") == "0.25.1"
 PY
 
