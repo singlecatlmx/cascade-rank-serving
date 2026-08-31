@@ -1,24 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 if [[ ! -f AGENTS.md || ! -d .git ]]; then
   printf 'Run this script from the cascade-rank-serving repository root.\n' >&2
   exit 1
 fi
-
 REPO_DIR=$(pwd)
 WORK_DIR=/workspace
 LOG_DIR=$WORK_DIR/d0a-logs
 MODEL_DIR=$WORK_DIR/models
 RAW_DATA_DIR=$WORK_DIR/data/raw
-
 source /usr/local/miniconda3/etc/profile.d/conda.sh
 conda activate py312
-
 mkdir -p env "$LOG_DIR" "$MODEL_DIR" "$RAW_DATA_DIR"
 mkdir -p "$WORK_DIR/results" "$WORK_DIR/cache/hf"
 mkdir -p "$WORK_DIR/cache/modelscope" "$WORK_DIR/cache/pip"
-
 export HF_HOME=$WORK_DIR/cache/hf
 export MODELSCOPE_CACHE=$WORK_DIR/cache/modelscope
 export PIP_CACHE_DIR=$WORK_DIR/cache/pip
@@ -26,7 +21,6 @@ export HF_HUB_ENABLE_HF_TRANSFER=1
 export CUDA_VISIBLE_DEVICES=""
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=2
-
 for setting in \
   'export HF_HOME=/workspace/cache/hf' \
   'export MODELSCOPE_CACHE=/workspace/cache/modelscope' \
@@ -34,7 +28,6 @@ for setting in \
   'export HF_HUB_ENABLE_HF_TRANSFER=1'; do
   grep -qxF "$setting" ~/.bashrc || printf '%s\n' "$setting" >> ~/.bashrc
 done
-
 printf '== Preflight ==\n'
 python --version
 which python
@@ -43,14 +36,12 @@ free -h
 df -h "$WORK_DIR"
 git status --short --branch
 git rev-parse HEAD
-
 printf '\n== Freeze installed versions ==\n'
 python -m pip freeze > env/env_baseline.txt
 python - <<'PY'
 from importlib.metadata import version
 from pathlib import Path
 import torch
-
 versions = {name: version(name) for name in ("torch", "vllm", "transformers")}
 print("package metadata:", versions)
 print("torch runtime:", torch.__version__)
@@ -66,7 +57,6 @@ Path("env/constraints.txt").write_text(
 )
 print(Path("env/constraints.txt").read_text(encoding="utf-8"))
 PY
-
 printf '\n== Test import vLLM before installing dependencies ==\n'
 set +e
 python - <<'PY' 2>&1 | tee "$LOG_DIR/import_vllm_before_install.log"
@@ -90,7 +80,7 @@ printf '\n== Install D0-A dependencies ==\n'
 python -m pip install \
   --progress-bar off \
   -c env/constraints.txt \
-  modelscope peft accelerate datasets kagglehub \
+  modelscope peft accelerate datasets kagglehub kaggle \
   hydra-core omegaconf matplotlib \
   2>&1 | tee "$LOG_DIR/pip_install.log"
 
@@ -100,7 +90,7 @@ import torch
 
 for name in (
     "torch", "vllm", "transformers", "modelscope", "peft",
-    "accelerate", "datasets", "kagglehub",
+    "accelerate", "datasets", "kagglehub", "kaggle",
 ):
     print(f"{name}=={md.version(name)}")
 print("torch runtime:", torch.__version__)
@@ -226,27 +216,39 @@ if [[ -z ${KAGGLE_KEY:-} ]]; then
 fi
 
 printf '\n== Download datasets serially ==\n'
+mkdir -p "$RAW_DATA_DIR/competition"
+kaggle competitions download -c eedi-mining-misconceptions-in-mathematics \
+  -p "$RAW_DATA_DIR/competition" 2>&1 | tee "$LOG_DIR/download_competition.log"
+python - <<'PY'
+from zipfile import ZipFile
+
+archive = "/workspace/data/raw/competition/eedi-mining-misconceptions-in-mathematics.zip"
+with ZipFile(archive) as source:
+    source.extractall("/workspace/data/raw/competition")
+PY
 python - <<'PY' 2>&1 | tee "$LOG_DIR/download_data.log"
-import kagglehub
+import kagglehub, os
 
-downloads = [
-    ("competition", "eedi-mining-misconceptions-in-mathematics", "/workspace/data/raw/competition"),
-    ("dataset", "conjuring92/eedi-five-folds", "/workspace/data/raw/eedi-five-folds"),
-    ("dataset", "conjuring92/eedi-silver-v3", "/workspace/data/raw/eedi-silver-v3"),
-    (
-        "dataset",
-        "conjuring92/eedi-ranker-silver-v3-teacher-blended-cot",
-        "/workspace/data/raw/eedi-ranker-teacher",
-    ),
-]
-
-for kind, handle, path in downloads:
-    print(f"downloading {kind}: {handle}")
-    if kind == "competition":
-        result = kagglehub.competition_download(handle, path=path)
-    else:
-        result = kagglehub.dataset_download(handle, path=path)
+handles = (
+    "conjuring92/eedi-five-folds", "conjuring92/eedi-silver-v3",
+    "conjuring92/eedi-embed-pretrain-mix-final", "conjuring92/eedi-embed-mix-silver-v3",
+    "conjuring92/eedi-ranker-silver-v3-teacher-blended-cot", "conjuring92/eedi-tutor-mix-v8",
+    "conjuring92/eedi-cot-sonnet-6k", "conjuring92/eedi-cot-train-silver-v3",
+    "conjuring92/eedi-misconception-clusters", "conjuring92/eedi-cot-gen-base",
+)
+for handle in handles:
+    print(f"downloading dataset: {handle}")
+    path = f"/workspace/data/raw/{handle.split('/', 1)[1]}"
+    result = kagglehub.dataset_download(handle, path=path)
     print("saved to:", result)
+
+for required_file in (
+    "/workspace/data/raw/competition/train.csv", "/workspace/data/raw/competition/misconception_mapping.csv",
+    "/workspace/data/raw/eedi-silver-v3/train.csv", "/workspace/data/raw/eedi-silver-v3/misconception_mapping.csv",
+    "/workspace/data/raw/eedi-five-folds/folds.parquet",
+):
+    if not os.path.isfile(required_file):
+        raise SystemExit(f"required data file missing: {required_file}")
 PY
 unset KAGGLE_USERNAME KAGGLE_KEY
 

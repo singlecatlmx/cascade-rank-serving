@@ -27,12 +27,12 @@ ls models/qwen3-reranker-4b/*.safetensors
 
 | 数据集 | 用途 |
 |---|---|
-| `eedi-mining-misconceptions-in-mathematics` | 原始比赛数据（1.8k MCQ）|
+| `eedi-mining-misconceptions-in-mathematics` | 原始比赛数据（1.8k MCQ）；用 Kaggle CLI 下载 |
 | `conjuring92/eedi-five-folds` | fold 划分（GroupKFold on ConstructId）|
 | `conjuring92/eedi-silver-v3` | 合成数据（1.8k + 10.6k MCQ，4791 标签）|
 | `conjuring92/eedi-ranker-silver-v3-teacher-blended-cot` | 粗排训练集（含 CoT 与 teacher 分）|
 
-用 `kagglehub` 下载。**只下这四个**，其余（listwise / embed-pretrain / cot 原始集）7 天内用不到。
+冠军方案的全部数据已在 D0-A 前置下载。本阶段直接使用上表四项：原始竞赛数据使用 `kaggle competitions download`；其余使用 `kagglehub.dataset_download`。
 
 ### T2.2 冻结评测集
 

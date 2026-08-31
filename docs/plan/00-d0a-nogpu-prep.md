@@ -95,14 +95,24 @@ HF 直连也可用（实测 200），若 ModelScope 某仓库缺文件，换 `hu
 export KAGGLE_USERNAME=***  KAGGLE_KEY=***
 ```
 
-只下这四个（其余 7 天内用不到）：
+下载冠军仓库 `download_datasets.py` 列出的全部数据：
 
 | 数据集 | 用途 |
 |---|---|
-| `eedi-mining-misconceptions-in-mathematics` | 原始比赛数据 |
+| `eedi-mining-misconceptions-in-mathematics` | 原始比赛数据；用 `kaggle competitions download` |
 | `conjuring92/eedi-five-folds` | fold 划分 |
 | `conjuring92/eedi-silver-v3` | 合成数据（12.4k MCQ / 4791 标签）|
+| `conjuring92/eedi-embed-pretrain-mix-final` | 召回模型预训练数据 |
+| `conjuring92/eedi-embed-mix-silver-v3` | 召回模型微调数据 |
 | `conjuring92/eedi-ranker-silver-v3-teacher-blended-cot` | 粗排训练集 |
+| `conjuring92/eedi-tutor-mix-v8` | listwise 重排训练集 |
+| `conjuring92/eedi-cot-sonnet-6k` | 6k reasoning 样本 |
+| `conjuring92/eedi-cot-train-silver-v3` | reasoning 训练数据 |
+| `conjuring92/eedi-misconception-clusters` | 意图标签聚类 |
+| `conjuring92/eedi-cot-gen-base` | reasoning 生成基础数据 |
+
+> `kagglehub.competition_download` 对该竞赛实测返回 Resource not found；原始比赛数据必须使用页面给出的 Kaggle CLI 命令。
+> 其余 10 个作者数据集使用 `kagglehub.dataset_download`，2026-09-01 已逐项确认均为 public。
 
 ### A.7 ★★ Tokenizer 侧验证（**最容易踩坑的地方，全部无卡可做**）
 
