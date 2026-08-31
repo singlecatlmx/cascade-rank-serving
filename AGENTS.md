@@ -35,6 +35,7 @@
 - **不是**：刷榜项目。绝对分数不重要，**相对优化幅度**才是产出
 - **业务包装**：搜索 Query-意图标签 级联语义匹配与排序服务
 - **数据蓝本**：Kaggle EEDI 竞赛第一名方案（`rbiswasfc/eedi-mining-misconceptions`，MIT）。作者已公开全部数据集，**不需要调用任何商业 LLM API**
+- **数据入口（2026-09-01 实测）**：`kagglehub.competition_download("eedi-mining-misconceptions-in-mathematics")` 返回 Resource not found，但竞赛页面仍提供官方 `kaggle competitions download -c eedi-mining-misconceptions-in-mathematics`。原始竞赛数据用 Kaggle CLI；冠军仓库 `download_datasets.py` 列出的 10 个公开 dataset 全部用 `kagglehub.dataset_download` 前置下载，避免后续阶段阻塞。
 
 ### 业务映射（写文档时统一用右列术语）
 
