@@ -112,7 +112,7 @@ export KAGGLE_USERNAME=***  KAGGLE_KEY=***
 | `conjuring92/eedi-cot-gen-base` | reasoning 生成基础数据 |
 
 > `kagglehub.competition_download` 对该竞赛实测返回 Resource not found；原始比赛数据必须使用页面给出的 Kaggle CLI 命令。
-> 其余 10 个作者数据集使用 `kagglehub.dataset_download`，2026-09-01 已逐项确认均为 public。
+> 其余 10 个作者数据集使用 `kagglehub.dataset_download(..., output_dir=...)`，2026-09-01 已逐项确认均为 public。`path=` 是数据集内部路径，不是本地目录。
 
 ### A.7 ★★ Tokenizer 侧验证（**最容易踩坑的地方，全部无卡可做**）
 

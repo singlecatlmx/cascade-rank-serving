@@ -239,7 +239,7 @@ handles = (
 for handle in handles:
     print(f"downloading dataset: {handle}")
     path = f"/workspace/data/raw/{handle.split('/', 1)[1]}"
-    result = kagglehub.dataset_download(handle, path=path)
+    result = kagglehub.dataset_download(handle, output_dir=path)
     print("saved to:", result)
 
 for required_file in (
