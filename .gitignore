@@ -1,0 +1,16 @@
+# 模型权重与缓存：体积大，从 ModelScope / Kaggle 重新拉取
+models/
+cache/
+
+# 原始数据不进 git，但冻结后的评测集必须进（报告数字要能追溯）
+data/*
+!data/eval_set_v1.jsonl
+!data/label_pool_v1.jsonl
+
+# results/*.json 与 assets/ 要进 git，此处只挡日志
+*.log
+wandb/
+
+__pycache__/
+*.py[cod]
+.DS_Store
