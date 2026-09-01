@@ -162,7 +162,7 @@ flowchart TB
 `flash_attn` / `flashinfer` / `triton_attn` / `flex_attention`
 （其余 mamba / linear / SSM / rocm / cpu 系列与本项目无关）
 
-**⚠️ `VLLM_ATTENTION_BACKEND` 环境变量在 0.25.1 中已被移除**，且设置后**不报错也不生效**（静默失效）。选择逻辑在 `vllm/v1/attention/selector.py::get_attn_backend`，正确旋钮需从 `vllm serve --help` 或 `AttentionSelectorConfig` 确认。**不要照抄旧版教程。**
+**⚠️ `VLLM_ATTENTION_BACKEND` 环境变量在 0.25.1 中已被移除**，且设置后**不报错也不生效**（静默失效）。选择逻辑在 `vllm/v1/attention/selector.py::get_attn_backend`。实测完整帮助需使用 `vllm serve --help=all`，正确 CLI 旋钮是 `--attention-backend`。**不要照抄旧版教程。**
 
 ---
 
@@ -214,10 +214,12 @@ flowchart TB
 
 ### Qwen3 已知坑（踩过一次就够了）
 
-- **thinking 必须关闭**。排序只要 1 个 token 的 yes/no logit，`<think>` 块是纯污染。用 Base 模型，或 `apply_chat_template(..., enable_thinking=False)`。**代码里要有显式断言**。
+- **thinking 必须关闭**。排序只要 1 个 token 的 yes/no logit。Qwen3-Reranker 官方 suffix 会保留一个空的 `<think>\n\n</think>` 块，这表示无 reasoning 内容；禁止断言 prompt 中完全没有 `<think>` 标签，应断言 suffix 精确匹配且只有空块。
 - **yes/no 用小写**，且 token id 必须 `tokenizer.convert_tokens_to_ids("yes")` 动态取，禁止硬编码。
 - **0.6B / 1.7B / 4B 是 tied embeddings**。"冻结 lm_head" 会连带冻结输入 embedding，行为与 14B 不同，必须显式处理并在报告中说明。
 - 沿用 Qwen3-Reranker **官方 prompt 模板**（`<Instruct>...<Query>...<Document>`）。好处：Document 天然在末尾，与 prefix caching 诉求吻合。
+- 官方竞赛 `misconception_mapping.csv` 只有 **2587** 条；本项目 4791 标签库必须读取 `eedi-silver-v3/misconception_mapping.csv`。
+- D0-A 实测共享前缀：A0 mean **23.12%**，A1 mean **88.37%**。D4–D5 主线前提成立。
 
 ---
 
@@ -405,7 +407,7 @@ results/{stage}_{variant}_{YYYYMMDD-HHMMSS}_{cfg_hash8}.json
 
 ## 9. 与人协作的沟通规范
 
-用户在 Windows 本机开发（**无 Python 环境**），实验在远程 Linux 服务器跑，**文件靠手动同步**。因此：
+项目已迁移为在远程 Linux 服务器上直接开发与实验，服务器具备 GitHub 公共仓库写权限。Windows 仅保留规划副本，不再承担运行与手动结果同步。因此：
 
 1. **每次改动结束，必须给出三件套**：
    - 改了 / 新建了哪些文件（逐个列全，漏一个就会跑到旧代码）
@@ -440,6 +442,7 @@ results/{stage}_{variant}_{YYYYMMDD-HHMMSS}_{cfg_hash8}.json
 - [x] 需求分析、业务包装、技术选型
 - [x] 环境探测：GPU / P2P / 量化注册表 / attention backend / **cuobjdump kernel 架构**
 - [x] AGENTS.md + `docs/plan/` 分阶段任务书
-- [ ] **磁盘扩容至 200 GB**（阻塞 D2 之后所有工作）
-- [ ] 查 `/model` 共享库是否预置 Qwen3（可省数十 GB 与下载时间）
-- [ ] D0：建仓 → `env/probe.py` 固化 → 量化冒烟三连 → 冻结 `constraints.txt`
+- [x] 磁盘扩容至 200 GB
+- [x] `/model` 共享库盘点与核心模型/数据下载
+- [x] D0-A：评测集冻结、tokenizer 坑位、共享前缀统计
+- [ ] D0-B：G0 Reranker BF16 冒烟失败，先读取服务器 `/workspace/cache/d0b/20260901-092130/g0_reranker_bf16.json` 的 error/traceback，再做最小修复
