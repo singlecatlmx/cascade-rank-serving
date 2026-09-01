@@ -1,0 +1,94 @@
+{
+  "git_commit": "b4aac85869987666dd61a6023f869eb88f224acc",
+  "vllm_version": "0.25.1",
+  "gpu": "none (D0-A no-GPU)",
+  "timestamp": "2026-09-01T07:58:33.221464+00:00",
+  "config": {
+    "model_dir": "/workspace/models/qwen3-reranker-0.6b",
+    "eval_set": "data/eval_set_v1.jsonl",
+    "label_pool": "data/label_pool_v1.jsonl",
+    "seed": 20260901,
+    "queries": 200,
+    "candidates_per_query": 32,
+    "candidate_sampling": "actual_plus_seeded_random_negatives",
+    "prompt_variants": [
+      "a0_document_first",
+      "a1_document_last"
+    ],
+    "prefix": "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n",
+    "system_message": "Judge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".",
+    "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+    "suffix": "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+    "length_margin_tokens": 64,
+    "target_concurrencies": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  "tokenizer_checks": {
+    "yes_token_id": 9693,
+    "no_token_id": 2152,
+    "thinking_disabled": true,
+    "thinking_suffix": "one empty <think> block from the official reranker suffix",
+    "tie_word_embeddings": true
+  },
+  "variants": {
+    "a0_document_first": {
+      "prompt_tokens": {
+        "mean": 184.4446875,
+        "p50": 178.0,
+        "p90": 232.10000000000036,
+        "p99": 309.52000000001135,
+        "max": 471
+      },
+      "shared_prefix_tokens": {
+        "mean": 41.0,
+        "p50": 41.0,
+        "p90": 41.0,
+        "p99": 41.0,
+        "max": 41
+      },
+      "shared_prefix_ratio": {
+        "mean": 0.2311697411676328,
+        "p50": 0.2303370786516854,
+        "p90": 0.2867132867132867,
+        "p99": 0.3082706766917293,
+        "max": 0.3203125
+      }
+    },
+    "a1_document_last": {
+      "prompt_tokens": {
+        "mean": 183.83125,
+        "p50": 177.0,
+        "p90": 232.0,
+        "p99": 309.52000000001135,
+        "max": 471
+      },
+      "shared_prefix_tokens": {
+        "mean": 163.11,
+        "p50": 158.0,
+        "p90": 211.10000000000036,
+        "p99": 273.74000000001615,
+        "max": 429
+      },
+      "shared_prefix_ratio": {
+        "mean": 0.8836641498510702,
+        "p50": 0.8876404494382022,
+        "p90": 0.9215686274509803,
+        "p99": 0.9455073796548592,
+        "max": 0.9705882352941176
+      }
+    }
+  },
+  "recommended": {
+    "max_model_len": 384,
+    "max_num_batched_tokens_scan": {
+      "8": 1536,
+      "16": 2944,
+      "32": 5888,
+      "64": 11776
+    }
+  }
+}
