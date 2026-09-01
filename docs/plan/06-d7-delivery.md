@@ -11,9 +11,25 @@
 
 - 2 个 vLLM 实例（召回 embedding + 粗排 reranker），FastAPI 异步编排
 - 输入 query → 返回 top-25 标签 + 各级耗时拆解
-- 用 `vllm bench serve` 或简单并发脚本打一次压测，画 latency–throughput 曲线，标出 knee point
+- **★ 超时降级链路**：精排超时/过载时自动跳过，有损返回粗排结果
+  （`asyncio.wait_for` + fallback，十几行代码）。这是搜索业务的标配，
+  体现的是**服务化思维而非 benchmark 思维**，性价比极高
+- 记录降级触发率与降级后的 MAP@25 损失
 
 **保持最小**：不做前端、不做鉴权、不做 Docker。一个 `serve.py` + 一个 `bench_serve.py`。
+
+### T7.1b ★ 容量规划与延迟预算求解（半天，面向业务的最终交付）
+
+把前面所有实验的数据归到一张图上，回答业务方真正的问题：
+
+1. **压测出 latency–throughput 曲线**，标出 knee point → **单卡 QPS 上限**
+2. **容量规划公式**：支撑 X QPS 需要几张卡？折算 **GPU-秒 / 千次查询**
+3. **★ 延迟预算约束下的最优配置**：扫 `(级数, 每级候选数, 量化档位)` 的组合，
+   画 **MAP@25 – P99 延迟的 Pareto 前沿**，在 P99 ≤ 150 / 200 / 300 ms 三条线上
+   各标出一个最优配置点
+
+> 这一步不需要新实验，**全部用 E1–E6 已有的 `results/*.json` 重新组合**。
+> 但它是把技术指标翻译成业务语言的关键一步，性价比全项目最高。
 
 ### T7.2 REPORT.md（核心交付物）
 
@@ -28,8 +44,9 @@
 | 5. 打分路径与 prefill-bound 调参 | E4 |
 | 6. 量化 | E5 + 校准集消融 |
 | 7. 部署拓扑 | E6 + 43.6 GB/s 的定量解释 |
-| 8. 环境踩坑记录 | sm_120 kernel 覆盖、无 PTX 无 JIT、`VLLM_ATTENTION_BACKEND` 静默失效 |
-| 9. 结论与 Future Work | 砍掉的实验都放这里 |
+| 8. **延迟预算与容量规划** | **Pareto 前沿 + knee point + GPU-秒/千查询 + 降级链路** |
+| 9. 环境踩坑记录 | sm_120 kernel 覆盖、无 PTX 无 JIT、`VLLM_ATTENTION_BACKEND` 静默失效 |
+| 10. 结论与 Future Work | 砍掉的实验都放这里 |
 
 **每个数字都要能追溯到 `results/` 里的某个 JSON 和某个 commit。**
 
