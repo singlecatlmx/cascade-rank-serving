@@ -10,7 +10,7 @@ from pathlib import Path
 
 from transformers import AutoTokenizer
 
-from src.data.prompts import INSTRUCTION, SUFFIX, SYSTEM_MESSAGE, prompt_token_ids
+from src.data.prompts import INSTRUCTION, PREFIX, SUFFIX, SYSTEM_MESSAGE, prompt_token_ids
 
 
 MODEL_DIR = Path("/workspace/models/qwen3-reranker-0.6b")
@@ -105,16 +105,29 @@ def main():
         shared_ratios = []
         for query in queries:
             candidate_ids = candidates_by_query[query["query_id"]]
+            documents = [label_by_id[label_id] for label_id in candidate_ids]
+            if len(set(documents)) != CANDIDATES_PER_QUERY:
+                raise SystemExit(f"duplicate candidate documents for query {query['query_id']}")
             token_lists = [
                 prompt_token_ids(
                     tokenizer,
                     query["query"],
-                    label_by_id[label_id],
+                    document,
                     variant,
                 )
-                for label_id in candidate_ids
+                for document in documents
             ]
+            if len({tuple(tokens) for tokens in token_lists}) != CANDIDATES_PER_QUERY:
+                raise SystemExit(
+                    f"{variant} encoded different documents as identical prompts "
+                    f"for query {query['query_id']}"
+                )
             shared = common_prefix_length(token_lists)
+            if shared >= min(len(tokens) for tokens in token_lists):
+                raise SystemExit(
+                    f"{variant} produced an invalid 100% shared prefix "
+                    f"for query {query['query_id']}"
+                )
             shared_lengths.extend([shared] * len(token_lists))
             lengths.extend(len(tokens) for tokens in token_lists)
             shared_ratios.extend(shared / len(tokens) for tokens in token_lists)
@@ -123,6 +136,13 @@ def main():
             "shared_prefix_tokens": summarize(shared_lengths),
             "shared_prefix_ratio": summarize(shared_ratios),
         }
+
+    a0_ratio = variants["a0_document_first"]["shared_prefix_ratio"]["mean"]
+    a1_ratio = variants["a1_document_last"]["shared_prefix_ratio"]["mean"]
+    if a1_ratio <= a0_ratio:
+        raise SystemExit(
+            f"invalid prefix result: A1 mean {a1_ratio:.2%} must exceed A0 {a0_ratio:.2%}"
+        )
 
     a1_lengths = variants["a1_document_last"]["prompt_tokens"]
     max_model_len = round_up(a1_lengths["p99"] + LENGTH_MARGIN + 1, 128)
@@ -139,6 +159,7 @@ def main():
         "candidates_per_query": CANDIDATES_PER_QUERY,
         "candidate_sampling": "actual_plus_seeded_random_negatives",
         "prompt_variants": ["a0_document_first", "a1_document_last"],
+        "prefix": PREFIX,
         "system_message": SYSTEM_MESSAGE,
         "instruction": INSTRUCTION,
         "suffix": SUFFIX,
@@ -158,7 +179,7 @@ def main():
             "yes_token_id": yes_ids[0],
             "no_token_id": no_ids[0],
             "thinking_disabled": True,
-            "thinking_suffix": "one empty <think> block from the official chat template",
+            "thinking_suffix": "one empty <think> block from the official reranker suffix",
             "tie_word_embeddings": True,
         },
         "variants": variants,

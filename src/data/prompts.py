@@ -7,6 +7,10 @@ INSTRUCTION = (
     "retrieve the misconception that best explains the incorrect answer."
 )
 SUFFIX = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+PREFIX = (
+    f"<|im_start|>system\n{SYSTEM_MESSAGE}<|im_end|>\n"
+    "<|im_start|>user\n"
+)
 
 
 def user_content(query, document, variant):
@@ -19,21 +23,9 @@ def user_content(query, document, variant):
 
 def prompt_token_ids(tokenizer, query, document, variant):
     content = user_content(query, document, variant)
-    messages = [
-        {"role": "system", "content": SYSTEM_MESSAGE},
-        {"role": "user", "content": content},
-    ]
-    rendered = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=False,
-    )
+    rendered = PREFIX + content + SUFFIX
     if not rendered.endswith(SUFFIX):
-        raise ValueError(
-            "enable_thinking=False did not produce the official empty thinking suffix; "
-            f"rendered tail={rendered[-120:]!r}"
-        )
+        raise ValueError("prompt must end with the official empty thinking suffix")
     if variant == "a1_document_last":
         if content.rfind("<Document>:") < content.rfind("<Query>:"):
             raise ValueError("A1 prompt must place Document after Query")
