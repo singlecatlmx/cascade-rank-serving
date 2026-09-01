@@ -70,10 +70,11 @@ def main():
                 "ptx_error": ptx["stderr"][-500:],
             }
 
-    help_output = command(["vllm", "serve", "--help"])
+    help_output = command(["vllm", "serve", "--help=all"])
+    help_text = help_output["stdout"] + "\n" + help_output["stderr"]
     attention_help = [
         line.strip()
-        for line in help_output["stdout"].splitlines()
+        for line in help_text.splitlines()
         if "attention" in line.lower()
     ]
     timestamp = datetime.now(timezone.utc)
@@ -123,7 +124,8 @@ def main():
         "attention_backends": sorted(AttentionBackendEnum.__members__),
         "attention_cli": {
             "help_returncode": help_output["returncode"],
-            "attention_backend_flag_present": "--attention-backend" in help_output["stdout"],
+            "help_command": "vllm serve --help=all",
+            "attention_backend_flag_present": "--attention-backend" in help_text,
             "matching_lines": attention_help,
         },
         "kernel_architectures": kernel_architectures,
