@@ -357,8 +357,8 @@ results/{stage}_{variant}_{YYYYMMDD-HHMMSS}_{cfg_hash8}.json
 
 ### Git
 
-- 远程：GitHub 私库 `cascade-rank-serving`，分支 `main`
-- 服务器用只读 deploy key 拉取
+- 远程：GitHub 公共仓库 `cascade-rank-serving`，分支 `main`
+- 服务器具备 Git 写权限，可直接 `pull` / `commit` / `push` 实验产物
 - `results/*.json` 体积小，**纳入 git**（这样报告里每个数字都能追溯到 commit）
 - 模型权重、量化产物、HF cache **不进 git**
 

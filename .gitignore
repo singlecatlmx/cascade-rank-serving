@@ -1,6 +1,31 @@
 # 模型权重与缓存：体积大，从 ModelScope / Kaggle 重新拉取
 models/
 cache/
+tmp/
+
+# 模型、原始数据与归档禁止进入公共仓库
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.gguf
+*.parquet
+*.csv
+*.zip
+*.tar
+*.tgz
+*.tar.gz
+*.npy
+*.npz
+
+# 本地凭据与私钥
+.env
+.env.*
+!.env.example
+kaggle.json
+*.pem
+*.key
 
 # 原始数据不进 git，但冻结后的评测集必须进（报告数字要能追溯）
 data/*
@@ -13,4 +38,6 @@ wandb/
 
 __pycache__/
 *.py[cod]
+.venv/
+venv/
 .DS_Store
