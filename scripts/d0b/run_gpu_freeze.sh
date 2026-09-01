@@ -10,8 +10,10 @@ export CUDA_VISIBLE_DEVICES=0
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=2
 
-if [[ $(git status --porcelain | wc -l) -ne 0 ]]; then
+DIRTY_STATUS=$(git status --porcelain)
+if [[ -n "$DIRTY_STATUS" ]]; then
   printf 'Commit or remove local changes before D0-B so results have a clean git commit.\n' >&2
+  printf '%s\n' "$DIRTY_STATUS" >&2
   exit 1
 fi
 if [[ ! -s data/eval_set_v1.jsonl || ! -s data/label_pool_v1.jsonl ]]; then
