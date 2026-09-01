@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ ! -f AGENTS.md || ! -d .git ]]; then
-  printf 'Run this script from the cascade-rank-serving repository root.\n' >&2
+REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+if [[ ! -f "$REPO_DIR/AGENTS.md" || ! -d "$REPO_DIR/.git" ]]; then
+  printf 'Cannot locate the cascade-rank-serving repository.\n' >&2
   exit 1
 fi
-REPO_DIR=$(pwd)
+cd "$REPO_DIR"
 WORK_DIR=/workspace
 LOG_DIR=$WORK_DIR/d0a-logs
 MODEL_DIR=$WORK_DIR/models
