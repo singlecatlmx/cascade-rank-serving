@@ -48,6 +48,41 @@
 | pointwise ranker → top 5 | 精排 |
 | MAP@25 | 排序质量指标 |
 
+### 目标系统 pipeline（D7 交付形态）
+
+```mermaid
+flowchart TB
+    subgraph OFFLINE["离线预处理（服务启动时一次）"]
+        POOL["意图标签库 4791 条"] --> EMB0["Qwen3-Embedding-0.6B"]
+        EMB0 --> MAT["标签向量矩阵 4791×1024<br/>常驻 ~20 MB"]
+    end
+
+    Q["Query<br/>题干 + 正确答案 + 错误答案"] --> E1
+
+    subgraph S1["① 召回 Recall"]
+        E1["Qwen3-Embedding-0.6B<br/>query 侧拼 instruction"] --> MM["暴力矩阵乘 + topk<br/>4791 条无需 ANN"]
+    end
+
+    subgraph S2["② 粗排 Pre-rank"]
+        R1["Qwen3-Reranker-0.6B<br/>LoRA 微调"] --> SC1["pointwise yes/no logit 差<br/>max_tokens=1，不 decode"]
+    end
+
+    subgraph S3["③ 精排 Rank"]
+        R2["Qwen3-Reranker-4B<br/>INT4 / FP8"] --> SC2["pointwise yes/no logit 差"]
+    end
+
+    OUT["输出 top-25<br/>1-5 精排 · 6-8 粗排 · 9-25 召回"]
+
+    MAT -.常驻.-> MM
+    MM -->|"top 32~64"| R1
+    SC1 -->|"top 8"| R2
+    SC2 -->|"top 5"| OUT
+    SC1 -.->|"名次 6-8"| OUT
+    MM -.->|"名次 9-25"| OUT
+```
+
+**分层拼接输出**沿用原方案思路：只有最贵的那一级负责最前面的名次，后面的名次由更便宜的上游直接补齐。
+
 ---
 
 ## 2. 环境硬事实（已实测，不要重新猜测）
