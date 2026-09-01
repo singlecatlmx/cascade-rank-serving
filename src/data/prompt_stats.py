@@ -80,11 +80,12 @@ def main():
         raise SystemExit("expected tied embeddings for Qwen3-Reranker-0.6B")
     yes_ids = tokenizer.encode("yes", add_special_tokens=False)
     no_ids = tokenizer.encode("no", add_special_tokens=False)
-    assert len(yes_ids) == 1 and len(no_ids) == 1
-    assert tokenizer.convert_tokens_to_ids("yes") == yes_ids[0]
-    assert tokenizer.convert_tokens_to_ids("no") == no_ids[0]
-    suffix_tokens = tokenizer.encode(SUFFIX, add_special_tokens=False)
-
+    if len(yes_ids) != 1 or len(no_ids) != 1:
+        raise SystemExit(f"yes/no must be single tokens: yes={yes_ids}, no={no_ids}")
+    if tokenizer.convert_tokens_to_ids("yes") != yes_ids[0]:
+        raise SystemExit("yes token ID differs between encode and convert_tokens_to_ids")
+    if tokenizer.convert_tokens_to_ids("no") != no_ids[0]:
+        raise SystemExit("no token ID differs between encode and convert_tokens_to_ids")
     label_by_id = {row["label_id"]: row["label"] for row in labels}
     all_label_ids = sorted(label_by_id)
     rng = random.Random(meta["seed"])
@@ -110,7 +111,6 @@ def main():
                     query["query"],
                     label_by_id[label_id],
                     variant,
-                    suffix_tokens,
                 )
                 for label_id in candidate_ids
             ]
@@ -158,6 +158,7 @@ def main():
             "yes_token_id": yes_ids[0],
             "no_token_id": no_ids[0],
             "thinking_disabled": True,
+            "thinking_suffix": "one empty <think> block from the official chat template",
             "tie_word_embeddings": True,
         },
         "variants": variants,
