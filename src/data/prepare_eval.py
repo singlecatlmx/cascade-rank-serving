@@ -54,7 +54,7 @@ def main():
         raise SystemExit("frozen data already exists; refusing to overwrite")
 
     train_path = RAW_DIR / "competition/train.csv"
-    mapping_path = RAW_DIR / "competition/misconception_mapping.csv"
+    mapping_path = RAW_DIR / "eedi-silver-v3/misconception_mapping.csv"
     folds_path = RAW_DIR / "eedi-five-folds/folds.parquet"
     for path in (train_path, mapping_path, folds_path):
         if not path.is_file():
@@ -67,12 +67,18 @@ def main():
         raise SystemExit(f"unexpected folds columns: {list(folds.columns)}")
     if len(mapping) != 4791:
         raise SystemExit(f"expected 4791 labels, found {len(mapping)}")
+    if mapping["MisconceptionId"].nunique() != len(mapping):
+        raise SystemExit("duplicate MisconceptionId values in label mapping")
 
     queries = build_queries(train, folds)
     if len(queries) < EVAL_SIZE:
         raise SystemExit(f"fold 0 has only {len(queries)} labeled queries")
     selected = random.Random(SEED).sample(queries, EVAL_SIZE)
     selected.sort(key=lambda item: item["query_id"])
+    label_ids = set(mapping["MisconceptionId"].astype(int))
+    missing_label_ids = sorted({item["actual"][0] for item in selected} - label_ids)
+    if missing_label_ids:
+        raise SystemExit(f"eval labels missing from label pool: {missing_label_ids}")
 
     EVAL_PATH.parent.mkdir(exist_ok=True)
     meta = {
@@ -82,6 +88,7 @@ def main():
             "fold": 0,
             "size": EVAL_SIZE,
             "source": "eedi-mining-misconceptions-in-mathematics",
+            "label_source": "conjuring92/eedi-silver-v3",
         }
     }
     write_jsonl(EVAL_PATH, [meta, *selected])

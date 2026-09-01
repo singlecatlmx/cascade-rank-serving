@@ -19,7 +19,7 @@ fi
 
 for required_path in \
   /workspace/data/raw/competition/train.csv \
-  /workspace/data/raw/competition/misconception_mapping.csv \
+  /workspace/data/raw/eedi-silver-v3/misconception_mapping.csv \
   /workspace/data/raw/eedi-five-folds/folds.parquet \
   /workspace/models/qwen3-embedding-0.6b/config.json \
   /workspace/models/qwen3-reranker-0.6b/config.json \
