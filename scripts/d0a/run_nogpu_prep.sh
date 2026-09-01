@@ -7,13 +7,13 @@ if [[ ! -f "$REPO_DIR/AGENTS.md" || ! -d "$REPO_DIR/.git" ]]; then
 fi
 cd "$REPO_DIR"
 WORK_DIR=/workspace
-LOG_DIR=$WORK_DIR/d0a-logs
+LOG_DIR=$WORK_DIR/cache/d0a/logs
 MODEL_DIR=$WORK_DIR/models
 RAW_DATA_DIR=$WORK_DIR/data/raw
 source /usr/local/miniconda3/etc/profile.d/conda.sh
 conda activate py312
 mkdir -p env "$LOG_DIR" "$MODEL_DIR" "$RAW_DATA_DIR"
-mkdir -p "$WORK_DIR/results" "$WORK_DIR/cache/hf"
+mkdir -p "$WORK_DIR/cache/hf"
 mkdir -p "$WORK_DIR/cache/modelscope" "$WORK_DIR/cache/pip"
 export HF_HOME=$WORK_DIR/cache/hf
 export MODELSCOPE_CACHE=$WORK_DIR/cache/modelscope
@@ -290,8 +290,8 @@ cp env/env_baseline.txt "$LOG_DIR/env_baseline.txt"
 git status --short --branch | tee "$LOG_DIR/git_status_after_run.log"
 
 D0A_LOG_TS=$(date +%Y%m%d-%H%M%S)
-ARCHIVE_PATH=$WORK_DIR/d0a-probe-$D0A_LOG_TS.tgz
-tar -czf "$ARCHIVE_PATH" -C "$WORK_DIR" d0a-logs
+ARCHIVE_PATH=$WORK_DIR/cache/d0a/d0a-probe-$D0A_LOG_TS.tgz
+tar -czf "$ARCHIVE_PATH" -C "$WORK_DIR/cache/d0a" logs
 
 printf '\nD0-A collection finished.\n'
 printf 'vLLM import before install exit code: %s\n' "$VLLM_BEFORE_RC"

@@ -6,7 +6,7 @@ cd "$REPO_DIR"
 source /usr/local/miniconda3/etc/profile.d/conda.sh
 conda activate py312
 
-VLLM_IMPORT_LOG=/workspace/d0a-logs/import_vllm_after_install.log
+VLLM_IMPORT_LOG=/workspace/cache/d0a/logs/import_vllm_after_install.log
 if [[ ! -f "$VLLM_IMPORT_LOG" ]]; then
   printf 'Missing no-GPU vLLM import log. Run run_nogpu_prep.sh first.\n' >&2
   exit 1
