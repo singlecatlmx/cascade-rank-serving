@@ -23,15 +23,19 @@ SUFFIX = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--case", default="g0_reranker_bf16")
     parser.add_argument("--model", required=True)
+    parser.add_argument("--quantization", default="none")
+    parser.add_argument("--prompt-mode", choices=("plain", "reranker"), default="plain")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
     config = {
-        "case": "g0_reranker_bf16",
+        "case": args.case,
         "model": args.model,
         "dtype": "bfloat16",
-        "quantization": None,
+        "quantization": None if args.quantization == "none" else args.quantization,
+        "prompt_mode": args.prompt_mode,
         "tensor_parallel_size": 1,
         "gpu_memory_utilization": 0.85,
         "max_model_len": 512,
@@ -84,32 +88,44 @@ def main():
         if tokenizer.encode("no", add_special_tokens=False) != [no_token_id]:
             raise RuntimeError("no is not a single token")
 
-        prompt = (
-            f"<|im_start|>system\n{SYSTEM_PROMPT}<|im_end|>\n"
-            "<|im_start|>user\n"
-            f"<Instruct>: {INSTRUCTION}\n<Query>: {QUERY}\n<Document>: {DOCUMENT}"
-            f"{SUFFIX}"
-        )
-        if not prompt.endswith(SUFFIX):
+        if args.prompt_mode == "reranker":
+            prompt = (
+                f"<|im_start|>system\n{SYSTEM_PROMPT}<|im_end|>\n"
+                "<|im_start|>user\n"
+                f"<Instruct>: {INSTRUCTION}\n<Query>: {QUERY}\n<Document>: {DOCUMENT}"
+                f"{SUFFIX}"
+            )
+        else:
+            prompt = "Answer yes or no: Is two plus two equal to four?"
+        if args.prompt_mode == "reranker" and not prompt.endswith(SUFFIX):
             raise RuntimeError("prompt does not end with the official empty thinking suffix")
         prompt_token_ids = tokenizer.encode(prompt, add_special_tokens=False)
         if len(prompt_token_ids) > config["max_model_len"]:
             raise RuntimeError(f"prompt has {len(prompt_token_ids)} tokens")
 
-        llm = LLM(
-            model=args.model,
-            dtype="bfloat16",
-            tensor_parallel_size=1,
-            gpu_memory_utilization=config["gpu_memory_utilization"],
-            max_model_len=config["max_model_len"],
-            enforce_eager=True,
-        )
-        if llm.model_config.quantization is not None:
+        llm_args = {
+            "model": args.model,
+            "dtype": "bfloat16",
+            "tensor_parallel_size": 1,
+            "gpu_memory_utilization": config["gpu_memory_utilization"],
+            "max_model_len": config["max_model_len"],
+            "enforce_eager": True,
+        }
+        if args.quantization != "none":
+            llm_args["quantization"] = args.quantization
+        llm = LLM(**llm_args)
+        expected_quantization = None if args.quantization == "none" else args.quantization
+        if llm.model_config.quantization != expected_quantization:
             raise RuntimeError(
-                f"quantization fallback detected: {llm.model_config.quantization}"
+                "quantization fallback detected: "
+                f"requested={expected_quantization}, actual={llm.model_config.quantization}"
             )
-        if llm.model_config.dtype != torch.bfloat16:
+        if args.quantization == "none" and llm.model_config.dtype != torch.bfloat16:
             raise RuntimeError(f"unexpected dtype: {llm.model_config.dtype}")
+        result["resolved_model_config"] = {
+            "quantization": llm.model_config.quantization,
+            "dtype": str(llm.model_config.dtype),
+        }
 
         sampling = SamplingParams(
             temperature=0,
@@ -143,7 +159,7 @@ def main():
 
     result["elapsed_seconds"] = round(time.perf_counter() - started, 3)
     output_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"status": result["status"], "output": str(output_path)}))
+    print(json.dumps({"case": args.case, "status": result["status"], "output": str(output_path)}))
     if result["status"] != "passed":
         raise SystemExit(1)
 

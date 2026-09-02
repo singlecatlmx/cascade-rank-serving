@@ -1,0 +1,40 @@
+{
+  "git_commit": "c8ea66ec757a29e58bd77b578b9e73c8d635a6da",
+  "vllm_version": "0.25.1",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "timestamp": "2026-09-02T15:36:11.131935+00:00",
+  "config": {
+    "case": "g0_reranker_bf16",
+    "model": "/workspace/models/qwen3-reranker-0.6b",
+    "dtype": "bfloat16",
+    "quantization": null,
+    "tensor_parallel_size": 1,
+    "gpu_memory_utilization": 0.85,
+    "max_model_len": 512,
+    "enforce_eager": true,
+    "max_tokens": 1,
+    "logprobs": 20,
+    "allowed_tokens": [
+      "yes",
+      "no"
+    ],
+    "prompt": {
+      "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+      "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+      "document": "The learner adds one too many when combining two quantities."
+    }
+  },
+  "status": "passed",
+  "output": {
+    "text": "yes",
+    "token_ids": [
+      9693
+    ],
+    "prompt_tokens": 114,
+    "yes_token_id": 9693,
+    "no_token_id": 2152,
+    "yes_logprob": -0.17185698449611664,
+    "no_logprob": -3.6093568801879883
+  },
+  "elapsed_seconds": 263.005
+}
