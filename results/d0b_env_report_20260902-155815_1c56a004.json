@@ -1,0 +1,244 @@
+{
+  "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+  "vllm_version": "0.25.1",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "timestamp": "2026-09-02T15:58:15.447147+00:00",
+  "config": {
+    "visible_devices": "0",
+    "required_gpu_count": 1,
+    "checks": [
+      "versions",
+      "gpu",
+      "disk",
+      "quantization_registry",
+      "attention_registry",
+      "attention_cli",
+      "vllm_kernel_sass"
+    ]
+  },
+  "python": "3.12.11",
+  "torch_version": "2.11.0+cu130",
+  "cuda_runtime": "13.0",
+  "gpus": [
+    {
+      "index": 0,
+      "name": "NVIDIA GeForce RTX 5090",
+      "capability": [
+        12,
+        0
+      ],
+      "total_memory_gb": 31.4
+    }
+  ],
+  "prior_two_gpu_measurement": {
+    "p2p": false,
+    "d2d_bandwidth_gbps": 43.6,
+    "source": "AGENTS.md section 2"
+  },
+  "nvidia_smi": {
+    "returncode": 0,
+    "stdout": "NVIDIA GeForce RTX 5090, 610.57.04, 32607 MiB",
+    "stderr": ""
+  },
+  "topology": {
+    "returncode": 0,
+    "stdout": "\u001b[4mGPU0\tNIC0\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tNODE\t4-10\t0\t\tN/A\nNIC0\tNODE\t X \t\t\t\t\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n\nNIC Legend:\n\n  NIC0: mlx5_0",
+    "stderr": ""
+  },
+  "disks": [
+    {
+      "path": "/workspace",
+      "total_gb": 91.94,
+      "used_gb": 14.69,
+      "free_gb": 77.25
+    },
+    {
+      "path": "/dev/shm",
+      "total_gb": 32.0,
+      "used_gb": 0.0,
+      "free_gb": 32.0
+    }
+  ],
+  "quantization_methods": [
+    "auto_awq",
+    "auto_gptq",
+    "awq",
+    "awq_marlin",
+    "bitsandbytes",
+    "compressed-tensors",
+    "deepseek_v4_fp8",
+    "experts_int8",
+    "fbgemm_fp8",
+    "fp8",
+    "fp8_per_block",
+    "fp8_per_channel",
+    "fp8_per_tensor",
+    "fp_quant",
+    "gpt_oss_mxfp4",
+    "gptq",
+    "gptq_marlin",
+    "humming",
+    "inc",
+    "int8_per_channel_weight_only",
+    "modelopt",
+    "modelopt_fp4",
+    "modelopt_mixed",
+    "modelopt_mxfp8",
+    "moe_wna16",
+    "mxfp4",
+    "mxfp8",
+    "online",
+    "quark",
+    "torchao"
+  ],
+  "attention_backends": [
+    "CPU_ATTN",
+    "CUSTOM",
+    "CUTLASS_MLA",
+    "FLASHINFER",
+    "FLASHINFER_MLA",
+    "FLASHINFER_MLA_SPARSE",
+    "FLASHINFER_MLA_SPARSE_DSV4",
+    "FLASHINFER_MLA_SPARSE_SM120",
+    "FLASHMLA",
+    "FLASHMLA_SPARSE",
+    "FLASHMLA_SPARSE_DSV4",
+    "FLASH_ATTN",
+    "FLASH_ATTN_DIFFKV",
+    "FLASH_ATTN_MLA",
+    "FLASH_ATTN_MLA_SPARSE",
+    "FLEX_ATTENTION",
+    "HPC_ATTN",
+    "MINIMAX_M3_SPARSE",
+    "NO_ATTENTION",
+    "ROCM_AITER_FA",
+    "ROCM_AITER_MLA",
+    "ROCM_AITER_MLA_SPARSE",
+    "ROCM_AITER_TRITON_MLA",
+    "ROCM_AITER_UNIFIED_ATTN",
+    "ROCM_ATTN",
+    "ROCM_FLASHMLA_SPARSE_DSV4",
+    "TOKENSPEED_MLA",
+    "TORCH_SDPA",
+    "TRITON_ATTN",
+    "TRITON_ATTN_DIFFKV",
+    "TRITON_MLA",
+    "TURBOQUANT",
+    "XPU_MLA_SPARSE"
+  ],
+  "attention_cli": {
+    "help_returncode": 0,
+    "help_command": "vllm serve --help=all",
+    "attention_backend_flag_present": true,
+    "matching_lines": [
+      "Disable cascade attention for V1. While cascade attention does not change the mathematical correctness, disabling it could be useful for preventing",
+      "potential numerical issues. This defaults to True, so users must opt in to cascade attention by setting this to False. Even when this is set to False,",
+      "cascade attention will only be used when the heuristic tells that it's beneficial. (default: True)",
+      "--override-attention-dtype OVERRIDE_ATTENTION_DTYPE",
+      "Override dtype for attention (default: None)",
+      "AttentionConfig:",
+      "Configuration for attention mechanisms in vLLM.",
+      "--attention-backend ATTENTION_BACKEND",
+      "Attention backend to use. Use \"auto\" or None for automatic selection. (default: None)",
+      "Layer patterns to skip KV cache quantization. Accepts layer indices (e.g., '0', '2', '4') or attention type names (e.g., 'sliding_window'). (default: [])",
+      "In some KV sharing setups, e.g. YOCO (https://arxiv.org/abs/2405.05254), some layers can skip tokens corresponding to prefill. This flag enables attention",
+      "Optional override for the multi-modal encoder attention backend when using vision transformers. Accepts any value from",
+      "`vllm.v1.attention.backends.registry.AttentionBackendEnum` (e.g. `FLASH_ATTN`). (default: None)",
+      "Optional dtype override for ViT encoder attention. Set to `\"fp8\"` to enable FP8 quantization via the FlashInfer cuDNN backend. When set to `\"fp8\"` without a",
+      "Path to a JSON file containing per-layer FP8 Q/K/V scales for ViT encoder attention. When provided (with `mm_encoder_attn_dtype=\"fp8\"`), static scaling is",
+      "If set to True, KV cache manager will allocate the same size of KV cache for all attention layers even if there are multiple type of attention layers like",
+      "full attention and sliding window attention. If set to None, the default value will be determined based on the environment and starting configuration.",
+      "--attention-config ATTENTION_CONFIG, -ac ATTENTION_CONFIG",
+      "Attention configuration.",
+      "API docs: https://docs.vllm.ai/en/v0.25.1/api/vllm/config/#vllm.config.AttentionConfig",
+      "Should either be a valid JSON string or JSON keys passed individually. (default: AttentionConfig(backend=None, flash_attn_version=None,",
+      "use_prefill_decode_attention=False, flash_attn_max_num_splits_for_cuda_graph=32, tq_max_kv_splits_for_cuda_graph=32, use_trtllm_attention=None,"
+    ]
+  },
+  "kernel_architectures": {
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/_C_stable_libtorch.abi3.so": {
+      "sass_architectures": [
+        "sm_100",
+        "sm_120",
+        "sm_75",
+        "sm_80",
+        "sm_86",
+        "sm_89",
+        "sm_90"
+      ],
+      "sass_returncode": 0,
+      "sass_error": "",
+      "ptx_listing": "PTX file    1: _C_stable_libtorch.abi3.1.sm_80.ptx\nPTX file    2: _C_stable_libtorch.abi3.2.sm_80.ptx\nPTX file    3: _C_stable_libtorch.abi3.3.sm_80.ptx\nPTX file    4: _C_stable_libtorch.abi3.4.sm_80.ptx\nPTX file    5: _C_stable_libtorch.abi3.5.sm_80.ptx\nPTX file    6: _C_stable_libtorch.abi3.6.sm_80.ptx\nPTX file    7: _C_stable_libtorch.abi3.7.sm_80.ptx\nPTX file    8: _C_stable_libtorch.abi3.8.sm_80.ptx\nPTX file    9: _C_stable_libtorch.abi3.9.sm_90.ptx\nPTX file   10: _C_stable_libtorch.abi3.10.sm_80.ptx\nPTX file   11: _C_stable_libtorch.abi3.11.sm_90.ptx\nPTX file   12: _C_stable_libtorch.abi3.12.sm_80.ptx\nPTX file   13: _C_stable_libtorch.abi3.13.sm_90.ptx\nPTX file   14: _C_stable_libtorch.abi3.14.sm_80.ptx\nPTX file   15: _C_stable_libtorch.abi3.15.sm_90.ptx\nPTX file   16: _C_stable_libtorch.abi3.16.sm_80.ptx\nPTX file   17: _C_stable_libtorch.abi3.17.sm_90.ptx\nPTX file   18: _C_stable_libtorch.abi3.18.sm_80.ptx\nPTX file   19: _C_stable_libtorch.abi3.19.sm_90.ptx\nPTX file   20: _C_stable_libtorch.abi3.20.sm_80.ptx\nPTX file   21: _C_stable_libtorch.abi3.21.sm_90.ptx\nPTX file   22: _C_stable_libtorch.abi3.22.sm_80.ptx\nPTX file   23: _C_stable_libtorch.abi3.23.sm_80.ptx\nPTX file   24: _C_stable_libtorch.abi3.24.sm_80.ptx\nPTX file   25: _C_stable_libtorch.abi3.25.sm_80.ptx\nPTX file   26: _C_stable_libtorch.abi3.26.sm_89.ptx\nPTX file   27: _C_stable_libtorch.abi3.27.sm_80.ptx\nPTX file   28: _C_stable_libtorch.abi3.28.sm_90.ptx",
+      "ptx_error": ""
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-310-x86_64-linux-gnu.so": {
+      "sass_architectures": [],
+      "sass_returncode": 255,
+      "sass_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-310-x86_64-linux-gnu.so' does not contain device code",
+      "ptx_listing": "",
+      "ptx_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-310-x86_64-linux-gnu.so' does not contain device code"
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-311-x86_64-linux-gnu.so": {
+      "sass_architectures": [],
+      "sass_returncode": 255,
+      "sass_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-311-x86_64-linux-gnu.so' does not contain device code",
+      "ptx_listing": "",
+      "ptx_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-311-x86_64-linux-gnu.so' does not contain device code"
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-312-x86_64-linux-gnu.so": {
+      "sass_architectures": [],
+      "sass_returncode": 255,
+      "sass_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-312-x86_64-linux-gnu.so' does not contain device code",
+      "ptx_listing": "",
+      "ptx_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-312-x86_64-linux-gnu.so' does not contain device code"
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-313-x86_64-linux-gnu.so": {
+      "sass_architectures": [],
+      "sass_returncode": 255,
+      "sass_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-313-x86_64-linux-gnu.so' does not contain device code",
+      "ptx_listing": "",
+      "ptx_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-313-x86_64-linux-gnu.so' does not contain device code"
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-314-x86_64-linux-gnu.so": {
+      "sass_architectures": [],
+      "sass_returncode": 255,
+      "sass_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-314-x86_64-linux-gnu.so' does not contain device code",
+      "ptx_listing": "",
+      "ptx_error": "cuobjdump info    : File '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/third_party/deep_gemm/_C.cpython-314-x86_64-linux-gnu.so' does not contain device code"
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/_moe_C_stable_libtorch.abi3.so": {
+      "sass_architectures": [
+        "sm_100",
+        "sm_120",
+        "sm_75",
+        "sm_80",
+        "sm_86",
+        "sm_89",
+        "sm_90"
+      ],
+      "sass_returncode": 0,
+      "sass_error": "",
+      "ptx_listing": "PTX file    1: _moe_C_stable_libtorch.abi3.1.sm_80.ptx\nPTX file    2: _moe_C_stable_libtorch.abi3.2.sm_80.ptx\nPTX file    3: _moe_C_stable_libtorch.abi3.3.sm_80.ptx\nPTX file    4: _moe_C_stable_libtorch.abi3.4.sm_80.ptx\nPTX file    5: _moe_C_stable_libtorch.abi3.5.sm_80.ptx\nPTX file    6: _moe_C_stable_libtorch.abi3.6.sm_80.ptx\nPTX file    7: _moe_C_stable_libtorch.abi3.7.sm_80.ptx\nPTX file    8: _moe_C_stable_libtorch.abi3.8.sm_80.ptx\nPTX file    9: _moe_C_stable_libtorch.abi3.9.sm_80.ptx\nPTX file   10: _moe_C_stable_libtorch.abi3.10.sm_80.ptx\nPTX file   11: _moe_C_stable_libtorch.abi3.11.sm_80.ptx\nPTX file   12: _moe_C_stable_libtorch.abi3.12.sm_80.ptx\nPTX file   13: _moe_C_stable_libtorch.abi3.13.sm_80.ptx\nPTX file   14: _moe_C_stable_libtorch.abi3.14.sm_80.ptx\nPTX file   15: _moe_C_stable_libtorch.abi3.15.sm_80.ptx",
+      "ptx_error": ""
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/_qutlass_C.abi3.so": {
+      "sass_architectures": [
+        "sm_100"
+      ],
+      "sass_returncode": 0,
+      "sass_error": "",
+      "ptx_listing": "",
+      "ptx_error": "cuobjdump info    : No PTX file found to extract from '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/_qutlass_C.abi3.so'. You may try with -all option."
+    },
+    "/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/_flashmla_C.abi3.so": {
+      "sass_architectures": [
+        "sm_100",
+        "sm_90"
+      ],
+      "sass_returncode": 0,
+      "sass_error": "",
+      "ptx_listing": "",
+      "ptx_error": "cuobjdump info    : No PTX file found to extract from '/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/_flashmla_C.abi3.so'. You may try with -all option."
+    }
+  }
+}

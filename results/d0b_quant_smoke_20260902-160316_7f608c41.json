@@ -1,0 +1,279 @@
+{
+  "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+  "vllm_version": "0.25.1",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "timestamp": "2026-09-02T16:03:16.471080+00:00",
+  "config": {
+    "cuda_visible_devices": "0",
+    "tensor_parallel_size": 1,
+    "case_order": [
+      "g0_reranker_bf16",
+      "qwen3_bf16",
+      "qwen3_online_fp8",
+      "qwen25_gptq_marlin",
+      "qwen3_awq_marlin",
+      "qwen3_modelopt_fp4_probe",
+      "qwen3_mxfp4_probe"
+    ]
+  },
+  "temporary_work_dir": "/workspace/cache/d0b/20260902-155734",
+  "gate_g0": true,
+  "cases": [
+    {
+      "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+      "vllm_version": "0.25.1",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "timestamp": "2026-09-02T15:58:16.766472+00:00",
+      "config": {
+        "case": "g0_reranker_bf16",
+        "model": "/workspace/models/qwen3-reranker-0.6b",
+        "dtype": "bfloat16",
+        "quantization": null,
+        "prompt_mode": "reranker",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "max_model_len": 512,
+        "enforce_eager": true,
+        "max_tokens": 1,
+        "logprobs": 20,
+        "allowed_tokens": [
+          "yes",
+          "no"
+        ],
+        "prompt": {
+          "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+          "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+          "document": "The learner adds one too many when combining two quantities."
+        }
+      },
+      "status": "passed",
+      "resolved_model_config": {
+        "quantization": null,
+        "dtype": "torch.bfloat16"
+      },
+      "output": {
+        "text": "yes",
+        "token_ids": [
+          9693
+        ],
+        "prompt_tokens": 114,
+        "yes_token_id": 9693,
+        "no_token_id": 2152,
+        "yes_logprob": -0.17185698449611664,
+        "no_logprob": -3.6093568801879883
+      },
+      "elapsed_seconds": 39.376,
+      "process_exit_code": 0
+    },
+    {
+      "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+      "vllm_version": "0.25.1",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "timestamp": "2026-09-02T15:59:00.036882+00:00",
+      "config": {
+        "case": "qwen3_bf16",
+        "model": "/model/ModelScope/Qwen/Qwen3-0.6B",
+        "dtype": "bfloat16",
+        "quantization": null,
+        "prompt_mode": "plain",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "max_model_len": 512,
+        "enforce_eager": true,
+        "max_tokens": 1,
+        "logprobs": 20,
+        "allowed_tokens": [
+          "yes",
+          "no"
+        ],
+        "prompt": {
+          "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+          "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+          "document": "The learner adds one too many when combining two quantities."
+        }
+      },
+      "status": "failed",
+      "resolved_model_config": {
+        "quantization": null,
+        "dtype": "torch.bfloat16"
+      },
+      "error": "RuntimeError: yes/no missing from logprobs: [9693, 7414, 1597, 2308, 81917, 362, 4710, 7281, 1304, 2160, 323, 576, 3555, 4599, 220, 715, 5209, 2303, 320, 330, 264]",
+      "traceback": "Traceback (most recent call last):\n  File \"/workspace/cascade-rank-serving/env/vllm_smoke.py\", line 144, in main\n    raise RuntimeError(f\"yes/no missing from logprobs: {list(step_logprobs)}\")\nRuntimeError: yes/no missing from logprobs: [9693, 7414, 1597, 2308, 81917, 362, 4710, 7281, 1304, 2160, 323, 576, 3555, 4599, 220, 715, 5209, 2303, 320, 330, 264]\n",
+      "elapsed_seconds": 36.671,
+      "process_exit_code": 1
+    },
+    {
+      "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+      "vllm_version": "0.25.1",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "timestamp": "2026-09-02T15:59:40.461674+00:00",
+      "config": {
+        "case": "qwen3_online_fp8",
+        "model": "/model/ModelScope/Qwen/Qwen3-0.6B",
+        "dtype": "bfloat16",
+        "quantization": "fp8",
+        "prompt_mode": "plain",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "max_model_len": 512,
+        "enforce_eager": true,
+        "max_tokens": 1,
+        "logprobs": 20,
+        "allowed_tokens": [
+          "yes",
+          "no"
+        ],
+        "prompt": {
+          "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+          "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+          "document": "The learner adds one too many when combining two quantities."
+        }
+      },
+      "status": "failed",
+      "resolved_model_config": {
+        "quantization": "fp8",
+        "dtype": "torch.bfloat16"
+      },
+      "error": "RuntimeError: yes/no missing from logprobs: [9693, 7414, 81917, 1597, 2308, 362, 4710, 7281, 1304, 323, 2160, 576, 3555, 220, 715, 320, 5209, 2303, 4599, 264, 330]",
+      "traceback": "Traceback (most recent call last):\n  File \"/workspace/cascade-rank-serving/env/vllm_smoke.py\", line 144, in main\n    raise RuntimeError(f\"yes/no missing from logprobs: {list(step_logprobs)}\")\nRuntimeError: yes/no missing from logprobs: [9693, 7414, 81917, 1597, 2308, 362, 4710, 7281, 1304, 323, 2160, 576, 3555, 220, 715, 320, 5209, 2303, 4599, 264, 330]\n",
+      "elapsed_seconds": 33.262,
+      "process_exit_code": 1
+    },
+    {
+      "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+      "vllm_version": "0.25.1",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "timestamp": "2026-09-02T16:00:17.219666+00:00",
+      "config": {
+        "case": "qwen25_gptq_marlin",
+        "model": "/model/ModelScope/Qwen/Qwen2.5-14B-Instruct-GPTQ-Int4",
+        "dtype": "bfloat16",
+        "quantization": "gptq_marlin",
+        "prompt_mode": "plain",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "max_model_len": 512,
+        "enforce_eager": true,
+        "max_tokens": 1,
+        "logprobs": 20,
+        "allowed_tokens": [
+          "yes",
+          "no"
+        ],
+        "prompt": {
+          "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+          "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+          "document": "The learner adds one too many when combining two quantities."
+        }
+      },
+      "status": "failed",
+      "error": "RuntimeError: quantization fallback detected: requested=gptq_marlin, actual=auto_gptq",
+      "traceback": "Traceback (most recent call last):\n  File \"/workspace/cascade-rank-serving/env/vllm_smoke.py\", line 119, in main\n    raise RuntimeError(\nRuntimeError: quantization fallback detected: requested=gptq_marlin, actual=auto_gptq\n",
+      "elapsed_seconds": 51.912,
+      "process_exit_code": 1
+    },
+    {
+      "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+      "vllm_version": "0.25.1",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "timestamp": "2026-09-02T16:01:12.305975+00:00",
+      "config": {
+        "case": "qwen3_awq_marlin",
+        "model": "/model/ModelScope/Qwen/Qwen3-32B-AWQ",
+        "dtype": "bfloat16",
+        "quantization": "awq_marlin",
+        "prompt_mode": "plain",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "max_model_len": 512,
+        "enforce_eager": true,
+        "max_tokens": 1,
+        "logprobs": 20,
+        "allowed_tokens": [
+          "yes",
+          "no"
+        ],
+        "prompt": {
+          "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+          "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+          "document": "The learner adds one too many when combining two quantities."
+        }
+      },
+      "status": "failed",
+      "error": "RuntimeError: quantization fallback detected: requested=awq_marlin, actual=auto_awq",
+      "traceback": "Traceback (most recent call last):\n  File \"/workspace/cascade-rank-serving/env/vllm_smoke.py\", line 119, in main\n    raise RuntimeError(\nRuntimeError: quantization fallback detected: requested=awq_marlin, actual=auto_awq\n",
+      "elapsed_seconds": 70.526,
+      "process_exit_code": 1
+    },
+    {
+      "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+      "vllm_version": "0.25.1",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "timestamp": "2026-09-02T16:02:26.345051+00:00",
+      "config": {
+        "case": "qwen3_modelopt_fp4_probe",
+        "model": "/model/ModelScope/Qwen/Qwen3-0.6B",
+        "dtype": "bfloat16",
+        "quantization": "modelopt_fp4",
+        "prompt_mode": "plain",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "max_model_len": 512,
+        "enforce_eager": true,
+        "max_tokens": 1,
+        "logprobs": 20,
+        "allowed_tokens": [
+          "yes",
+          "no"
+        ],
+        "prompt": {
+          "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+          "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+          "document": "The learner adds one too many when combining two quantities."
+        }
+      },
+      "status": "failed",
+      "error": "ValidationError: 1 validation error for VllmConfig\n  Value error, Cannot find the config file for modelopt_fp4 [type=value_error, input_value=ArgsKwargs((), {'model_co... 'shutdown_timeout': 0}), input_type=ArgsKwargs]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error",
+      "traceback": "Traceback (most recent call last):\n  File \"/workspace/cascade-rank-serving/env/vllm_smoke.py\", line 116, in main\n    llm = LLM(**llm_args)\n          ^^^^^^^^^^^^^^^\n  File \"/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/entrypoints/llm.py\", line 349, in __init__\n    self.llm_engine = LLMEngine.from_engine_args(\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/v1/engine/llm_engine.py\", line 171, in from_engine_args\n    vllm_config = engine_args.create_engine_config(usage_context)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/vllm/engine/arg_utils.py\", line 2338, in create_engine_config\n    config = VllmConfig(\n             ^^^^^^^^^^^\n  File \"/usr/local/miniconda3/envs/py312/lib/python3.12/site-packages/pydantic/_internal/_dataclasses.py\", line 121, in __init__\n    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)\npydantic_core._pydantic_core.ValidationError: 1 validation error for VllmConfig\n  Value error, Cannot find the config file for modelopt_fp4 [type=value_error, input_value=ArgsKwargs((), {'model_co... 'shutdown_timeout': 0}), input_type=ArgsKwargs]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error\n",
+      "elapsed_seconds": 12.364,
+      "process_exit_code": 1
+    },
+    {
+      "git_commit": "72ecbc1f80e91c3add14a110add54eb16169ea9a",
+      "vllm_version": "0.25.1",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "timestamp": "2026-09-02T16:02:40.088730+00:00",
+      "config": {
+        "case": "qwen3_mxfp4_probe",
+        "model": "/model/ModelScope/Qwen/Qwen3-0.6B",
+        "dtype": "bfloat16",
+        "quantization": "mxfp4",
+        "prompt_mode": "plain",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "max_model_len": 512,
+        "enforce_eager": true,
+        "max_tokens": 1,
+        "logprobs": 20,
+        "allowed_tokens": [
+          "yes",
+          "no"
+        ],
+        "prompt": {
+          "instruction": "Given a math question, its correct answer, and an incorrect answer, retrieve the misconception that best explains the incorrect answer.",
+          "query": "Question: What is 2 + 2? Correct answer: 4. Incorrect answer: 5.",
+          "document": "The learner adds one too many when combining two quantities."
+        }
+      },
+      "status": "failed",
+      "resolved_model_config": {
+        "quantization": "mxfp4",
+        "dtype": "torch.bfloat16"
+      },
+      "error": "RuntimeError: yes/no missing from logprobs: [9693, 7414, 1597, 2308, 81917, 362, 4710, 7281, 1304, 2160, 323, 576, 3555, 4599, 220, 715, 5209, 2303, 320, 330, 264]",
+      "traceback": "Traceback (most recent call last):\n  File \"/workspace/cascade-rank-serving/env/vllm_smoke.py\", line 144, in main\n    raise RuntimeError(f\"yes/no missing from logprobs: {list(step_logprobs)}\")\nRuntimeError: yes/no missing from logprobs: [9693, 7414, 1597, 2308, 81917, 362, 4710, 7281, 1304, 2160, 323, 576, 3555, 4599, 220, 715, 5209, 2303, 320, 330, 264]\n",
+      "elapsed_seconds": 33.208,
+      "process_exit_code": 1
+    }
+  ]
+}
