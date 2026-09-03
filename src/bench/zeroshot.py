@@ -8,6 +8,7 @@ from importlib import metadata
 from pathlib import Path
 
 import torch
+import yaml
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.inputs import TokensPrompt
@@ -34,6 +35,10 @@ def main():
     parser.add_argument("--labels", required=True)
     parser.add_argument("--candidates", required=True)
     parser.add_argument("--results-dir", default="results")
+    parser.add_argument("--stage", default="baseline")
+    parser.add_argument("--variant", default="zeroshot")
+    parser.add_argument("--result-prefix", default="baseline_zeroshot")
+    parser.add_argument("--training-config")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     parser.add_argument("--max-model-len", type=int, default=640)
     args = parser.parse_args()
@@ -49,8 +54,8 @@ def main():
         raise RuntimeError(f"expected one visible GPU, found {torch.cuda.device_count()}")
 
     config = {
-        "stage": "baseline",
-        "variant": "zeroshot",
+        "stage": args.stage,
+        "variant": args.variant,
         "model": args.model,
         "dtype": "bfloat16",
         "quantization": None,
@@ -75,6 +80,8 @@ def main():
         "candidates": Path(args.candidates).name,
         "candidate_config": candidate_meta,
     }
+    if args.training_config:
+        config["training_config"] = yaml.safe_load(Path(args.training_config).read_text(encoding="utf-8"))
     tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True)
     yes_id = tokenizer.convert_tokens_to_ids("yes")
     no_id = tokenizer.convert_tokens_to_ids("no")
@@ -147,7 +154,7 @@ def main():
     }
     timestamp = datetime.now(timezone.utc)
     digest = sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()[:8]
-    result_path = Path(args.results_dir) / f"baseline_zeroshot_{timestamp.strftime('%Y%m%d-%H%M%S')}_{digest}.json"
+    result_path = Path(args.results_dir) / f"{args.result_prefix}_{timestamp.strftime('%Y%m%d-%H%M%S')}_{digest}.json"
     result_path.parent.mkdir(exist_ok=True)
     result = {
         "git_commit": git_commit(),
