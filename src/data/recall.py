@@ -11,8 +11,10 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
-from src.data.prompts import INSTRUCTION
 from src.metrics import latency_stats, recall_at_k
+
+
+INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
 
 
 def read_jsonl(path):
