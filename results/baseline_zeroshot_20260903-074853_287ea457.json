@@ -1,0 +1,86 @@
+{
+  "git_commit": "1d22549271992476866978f8f107ce4f104f815a",
+  "vllm_version": "0.25.1",
+  "torch_version": "2.11.0+cu130",
+  "gpu": "NVIDIA GeForce RTX 5090 x1",
+  "timestamp": "20260903-074853",
+  "config": {
+    "stage": "baseline",
+    "variant": "zeroshot",
+    "model": "/workspace/models/qwen3-reranker-0.6b",
+    "dtype": "bfloat16",
+    "quantization": null,
+    "tensor_parallel_size": 1,
+    "enable_prefix_caching": true,
+    "gpu_memory_utilization": 0.85,
+    "max_model_len": 640,
+    "enforce_eager": true,
+    "disable_log_stats": false,
+    "prompt_variant": "a1_document_last",
+    "candidate_k": 32,
+    "submission": "one query group per generate call",
+    "warmup_queries": 20,
+    "measured_queries": 180,
+    "temperature": 0,
+    "max_tokens": 1,
+    "logprobs": 2,
+    "logprob_token_ids": [
+      "yes",
+      "no"
+    ],
+    "allowed_token_ids": [
+      "yes",
+      "no"
+    ],
+    "seed": 20260901,
+    "labels": "data/label_pool_v1.jsonl",
+    "candidates": "recall_top64.jsonl",
+    "candidate_config": {
+      "stage": "baseline",
+      "variant": "recall",
+      "model": "/workspace/models/qwen3-embedding-0.6b",
+      "dtype": "bfloat16",
+      "attention": "sdpa",
+      "pooling": "last_eos_token",
+      "normalize": true,
+      "query_instruction": "Given a web search query, retrieve relevant passages that answer the query",
+      "document_instruction": null,
+      "batch_size": 64,
+      "max_length": 512,
+      "top_k": [
+        32,
+        64
+      ],
+      "warmup_queries": 20,
+      "measured_queries": 180,
+      "seed": 20260901,
+      "eval": "data/eval_set_v1.jsonl",
+      "labels": "data/label_pool_v1.jsonl"
+    }
+  },
+  "metrics": {
+    "quality": {
+      "recall@32": 0.6055555555555555,
+      "map@25": 0.2002391942769461,
+      "ndcg@10": 0.2516135424467383
+    },
+    "latency_ms": {
+      "ttft_p50": 40.23456573486328,
+      "ttft_p95": 43.3073878288269,
+      "ttft_p99": 47.75396347045906,
+      "e2e_p50": 45.18470395123586,
+      "e2e_p95": 48.560512810945504,
+      "e2e_p99": 52.46949431020775
+    },
+    "throughput": {
+      "req_per_s": 17.906636772829852,
+      "candidates_scored_per_s": 573.0123767305553
+    },
+    "resource": {
+      "peak_mem_gb": 27.9453125,
+      "prefix_cache_hit_rate": 0.8386613924673118,
+      "kv_cache_usage_perc": 0.0,
+      "kv_cache_used_blocks": 0.0
+    }
+  }
+}
