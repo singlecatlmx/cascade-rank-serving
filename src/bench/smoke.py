@@ -1,6 +1,5 @@
 import argparse
 import json
-import math
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -75,6 +74,7 @@ def main():
         "gpu_memory_utilization": args.gpu_memory_utilization,
         "max_model_len": args.max_model_len,
         "enforce_eager": True,
+        "disable_log_stats": False,
         "warmup_requests": args.warmup,
         "measured_requests": args.requests,
         "max_tokens": 1,
@@ -96,6 +96,7 @@ def main():
         gpu_memory_utilization=args.gpu_memory_utilization,
         max_model_len=args.max_model_len,
         enforce_eager=True,
+        disable_log_stats=False,
         seed=0,
     )
     sampling = SamplingParams(temperature=0, max_tokens=1, logprobs=20, allowed_token_ids=[yes_id, no_id])
@@ -108,25 +109,34 @@ def main():
             raise RuntimeError("vLLM did not return request metrics")
         if output.metrics.first_token_latency <= 0:
             raise RuntimeError("vLLM returned invalid TTFT")
-        return output, output.metrics.first_token_latency * 1000, e2e_ms
+        logprobs = output.outputs[0].logprobs[-1]
+        if yes_id not in logprobs or no_id not in logprobs:
+            raise RuntimeError("yes/no missing from returned logprobs")
+        score = logprobs[yes_id].logprob - logprobs[no_id].logprob
+        return output.metrics.first_token_latency * 1000, e2e_ms, score
 
     for index in range(args.warmup):
         run(prompts[index % len(prompts)])
+    warmup_metrics = llm.get_metrics()
+    warmup_queries = metric_value(warmup_metrics, "vllm:prefix_cache_queries", (int, float))
+    warmup_hits = metric_value(warmup_metrics, "vllm:prefix_cache_hits", (int, float))
+    measurement_started = time.perf_counter()
     measured = [run(prompts[index % len(prompts)]) for index in range(args.requests)]
+    measured_seconds = time.perf_counter() - measurement_started
     peak_memory = gpu_memory_gb()
     metrics = llm.get_metrics()
-    queries = metric_value(metrics, "vllm:prefix_cache_queries", (int, float))
-    hits = metric_value(metrics, "vllm:prefix_cache_hits", (int, float))
+    queries = metric_value(metrics, "vllm:prefix_cache_queries", (int, float)) - warmup_queries
+    hits = metric_value(metrics, "vllm:prefix_cache_hits", (int, float)) - warmup_hits
     hit_rate = hits / queries if queries else 0.0
     if queries <= 0 or hit_rate <= 0:
         raise RuntimeError(f"prefix cache metrics are not positive: queries={queries}, hits={hits}")
     kv_usage = metric_value(metrics, "vllm:kv_cache_usage_perc", (int, float))
     num_blocks = getattr(llm.llm_engine.vllm_config.cache_config, "num_gpu_blocks", 0)
-    elapsed = time.perf_counter() - started
-    ttft = latency_stats([item[1] for item in measured])
-    e2e = latency_stats([item[2] for item in measured])
-    candidates = args.requests * 32
-    preds = list(range(32))
+    total_elapsed = time.perf_counter() - started
+    ttft = latency_stats([item[0] for item in measured])
+    e2e = latency_stats([item[1] for item in measured])
+    candidates = args.requests
+    preds = sorted(range(args.requests), key=lambda index: measured[index][2], reverse=True)
     quality = {
         "recall@32": recall_at_k(preds, [0], 32),
         "map@25": map_at_k(preds, [0], 25),
@@ -134,11 +144,14 @@ def main():
     }
     timestamp = datetime.now(timezone.utc)
     config_hash = sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()[:8]
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    if subprocess.check_output(["git", "status", "--porcelain"], text=True).strip():
+        commit += "-dirty"
     output_path = Path(args.output)
     if output_path.exists():
         raise SystemExit(f"refusing to overwrite {output_path}")
     result = {
-        "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "git_commit": commit,
         "vllm_version": metadata.version("vllm"),
         "torch_version": torch.__version__,
         "gpu": f"{torch.cuda.get_device_name(0)} x{torch.cuda.device_count()}",
@@ -150,13 +163,13 @@ def main():
                 "ttft_p50": ttft["p50"], "ttft_p95": ttft["p95"], "ttft_p99": ttft["p99"],
                 "e2e_p50": e2e["p50"], "e2e_p95": e2e["p95"], "e2e_p99": e2e["p99"],
             },
-            "throughput": {"req_per_s": args.requests / elapsed, "candidates_scored_per_s": candidates / elapsed},
+            "throughput": {"req_per_s": args.requests / measured_seconds, "candidates_scored_per_s": candidates / measured_seconds},
             "resource": {"peak_mem_gb": peak_memory, "prefix_cache_hit_rate": hit_rate, "kv_cache_usage_perc": kv_usage, "kv_cache_used_blocks": kv_usage * num_blocks},
         },
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"output": str(output_path), "prefix_cache_hit_rate": hit_rate, "elapsed_seconds": elapsed, "config_hash": config_hash}))
+    print(json.dumps({"output": str(output_path), "prefix_cache_hit_rate": hit_rate, "measured_seconds": measured_seconds, "total_seconds": total_elapsed, "config_hash": config_hash}))
 
 
 if __name__ == "__main__":
