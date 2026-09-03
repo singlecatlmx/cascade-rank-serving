@@ -1,0 +1,48 @@
+{
+  "git_commit": "185fad2eb5cb5db1f64277016b51c8dfd6efbe0d",
+  "vllm_version": "0.25.1",
+  "torch_version": "2.11.0+cu130",
+  "gpu": "NVIDIA GeForce RTX 5090 x1",
+  "timestamp": "20260903-064022",
+  "config": {
+    "model": "/workspace/models/qwen3-reranker-0.6b",
+    "dtype": "bfloat16",
+    "quantization": null,
+    "tensor_parallel_size": 1,
+    "enable_prefix_caching": true,
+    "gpu_memory_utilization": 0.85,
+    "max_model_len": 512,
+    "enforce_eager": true,
+    "disable_log_stats": false,
+    "warmup_requests": 20,
+    "measured_requests": 20,
+    "max_tokens": 1,
+    "logprobs": 20,
+    "seed": 0
+  },
+  "metrics": {
+    "quality": {
+      "recall@32": 1.0,
+      "map@25": 0.05555555555555555,
+      "ndcg@10": 0.0
+    },
+    "latency_ms": {
+      "ttft_p50": 15.346288681030273,
+      "ttft_p95": 22.97209501266489,
+      "ttft_p99": 126.72595739364607,
+      "e2e_p50": 16.178177495021373,
+      "e2e_p95": 24.01279321638877,
+      "e2e_p99": 127.98988584196178
+    },
+    "throughput": {
+      "req_per_s": 43.33080979888044,
+      "candidates_scored_per_s": 43.33080979888044
+    },
+    "resource": {
+      "peak_mem_gb": 27.9453125,
+      "prefix_cache_hit_rate": 0.9360635185959048,
+      "kv_cache_usage_perc": 0.0,
+      "kv_cache_used_blocks": 0.0
+    }
+  }
+}
