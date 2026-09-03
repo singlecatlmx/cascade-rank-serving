@@ -65,8 +65,11 @@ def main():
         "submission": "one query group per generate call",
         "warmup_queries": 20,
         "measured_queries": 180,
+        "temperature": 0,
         "max_tokens": 1,
-        "logprobs": 20,
+        "logprobs": 2,
+        "logprob_token_ids": ["yes", "no"],
+        "allowed_token_ids": ["yes", "no"],
         "seed": candidate_meta["seed"],
         "labels": args.labels,
         "candidates": Path(args.candidates).name,
@@ -88,7 +91,13 @@ def main():
         disable_log_stats=False,
         seed=candidate_meta["seed"],
     )
-    sampling = SamplingParams(temperature=0, max_tokens=1, logprobs=20, allowed_token_ids=[yes_id, no_id])
+    sampling = SamplingParams(
+        temperature=0,
+        max_tokens=1,
+        logprobs=2,
+        logprob_token_ids=[yes_id, no_id],
+        allowed_token_ids=[yes_id, no_id],
+    )
 
     def run(row):
         candidate_ids = row["candidate_ids"][:32]
