@@ -198,11 +198,15 @@ def main():
     measured_seconds = time.perf_counter() - measured_started
 
     snapshot = llm.get_metrics()
-    prefix_queries = metric_value(snapshot, "vllm:prefix_cache_queries", (int, float)) - warmup_queries
-    prefix_hits = metric_value(snapshot, "vllm:prefix_cache_hits", (int, float)) - warmup_hits
-    if prefix_queries <= 0:
-        raise RuntimeError("vLLM prefix cache counters were not recorded")
-    hit_rate = prefix_hits / prefix_queries
+    if args.disable_prefix_caching:
+        prefix_queries = 0
+        hit_rate = 0.0
+    else:
+        prefix_queries = metric_value(snapshot, "vllm:prefix_cache_queries", (int, float)) - warmup_queries
+        prefix_hits = metric_value(snapshot, "vllm:prefix_cache_hits", (int, float)) - warmup_hits
+        if prefix_queries <= 0:
+            raise RuntimeError("vLLM prefix cache counters were not recorded")
+        hit_rate = prefix_hits / prefix_queries
     kv_usage = metric_value(snapshot, "vllm:kv_cache_usage_perc", (int, float))
     num_blocks = llm.llm_engine.vllm_config.cache_config.num_gpu_blocks or 0
     ttft = latency_stats([item[1] for item in measured])
