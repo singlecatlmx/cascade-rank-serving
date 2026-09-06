@@ -128,7 +128,7 @@ def main():
         return final[yes_id].logprob - final[no_id].logprob, output.metrics.first_token_latency * 1000
 
     def run_candidate(row, label_id):
-        prompt = TokensPrompt(prompt_token_ids(tokenizer, row["query"], labels[label_id], args.prompt_variant))
+        prompt = TokensPrompt(prompt_token_ids=prompt_token_ids(tokenizer, row["query"], labels[label_id], args.prompt_variant))
         started = time.perf_counter()
         output = llm.generate([prompt], sampling, use_tqdm=False)[0]
         e2e_ms = (time.perf_counter() - started) * 1000
