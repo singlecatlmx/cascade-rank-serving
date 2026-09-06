@@ -25,13 +25,13 @@ mkdir -p "$WORK_DIR"
 CUDA_VISIBLE_DEVICES=0 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=2 python -m src.bench.zeroshot \
   --model "$MODEL" --labels data/label_pool_v1.jsonl --candidates "$CANDIDATES" \
   --results-dir "$WORK_DIR" --stage e1 --variant a0_cache_on --result-prefix e1_a0 \
-  --prompt-variant a0_document_first --submission-mode candidate --candidate-k 64 \
+  --prompt-variant a0_document_first --submission-mode group --candidate-k 64 \
   >"$WORK_DIR/a0.log" 2>&1 &
 PID_A0=$!
 CUDA_VISIBLE_DEVICES=1 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=2 python -m src.bench.zeroshot \
   --model "$MODEL" --labels data/label_pool_v1.jsonl --candidates "$CANDIDATES" \
   --results-dir "$WORK_DIR" --stage e1 --variant a1_cache_on --result-prefix e1_a1 \
-  --prompt-variant a1_document_last --submission-mode candidate --candidate-k 64 \
+  --prompt-variant a1_document_last --submission-mode group --candidate-k 64 \
   >"$WORK_DIR/a1.log" 2>&1 &
 PID_A1=$!
 wait "$PID_A0" "$PID_A1"
@@ -39,7 +39,7 @@ wait "$PID_A0" "$PID_A1"
 CUDA_VISIBLE_DEVICES=0 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=2 python -m src.bench.zeroshot \
   --model "$MODEL" --labels data/label_pool_v1.jsonl --candidates "$CANDIDATES" \
   --results-dir "$WORK_DIR" --stage e1 --variant a2_cache_off --result-prefix e1_a2 \
-  --prompt-variant a1_document_last --submission-mode candidate --candidate-k 64 \
+  --prompt-variant a1_document_last --submission-mode group --candidate-k 64 \
   --disable-prefix-caching >"$WORK_DIR/a2.log" 2>&1
 mv "$WORK_DIR"/e1_*.json results/
 printf 'E1 complete. Logs: %s\n' "$WORK_DIR"
