@@ -1,5 +1,6 @@
 import argparse
 import json
+import random
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -39,6 +40,12 @@ def main():
     parser.add_argument("--variant", default="zeroshot")
     parser.add_argument("--result-prefix", default="baseline_zeroshot")
     parser.add_argument("--training-config")
+    parser.add_argument("--prompt-variant", default="a1_document_last")
+    parser.add_argument("--disable-prefix-caching", action="store_true")
+    parser.add_argument("--submission-mode", choices=["group", "candidate"], default="group")
+    parser.add_argument("--submission-order", choices=["grouped", "random", "interleave"], default="grouped")
+    parser.add_argument("--interleave-k", type=int, default=2)
+    parser.add_argument("--candidate-k", type=int, default=32)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     parser.add_argument("--max-model-len", type=int, default=640)
     args = parser.parse_args()
@@ -50,6 +57,10 @@ def main():
         raise RuntimeError(f"expected 200 queries and 4791 labels, got {len(rows)} and {len(labels)}")
     if candidate_meta["seed"] != 20260901:
         raise RuntimeError(f"unexpected candidate seed: {candidate_meta['seed']}")
+    if args.interleave_k <= 0:
+        raise RuntimeError("interleave-k must be positive")
+    if not 1 <= args.candidate_k <= 64:
+        raise RuntimeError("candidate-k must be between 1 and 64")
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise RuntimeError(f"expected one visible GPU, found {torch.cuda.device_count()}")
 
@@ -60,14 +71,16 @@ def main():
         "dtype": "bfloat16",
         "quantization": None,
         "tensor_parallel_size": 1,
-        "enable_prefix_caching": True,
+        "enable_prefix_caching": not args.disable_prefix_caching,
         "gpu_memory_utilization": args.gpu_memory_utilization,
         "max_model_len": args.max_model_len,
         "enforce_eager": True,
         "disable_log_stats": False,
-        "prompt_variant": "a1_document_last",
-        "candidate_k": 32,
-        "submission": "one query group per generate call",
+        "prompt_variant": args.prompt_variant,
+        "candidate_k": args.candidate_k,
+        "submission": f"{args.submission_mode} per generate call",
+        "submission_order": args.submission_order,
+        "interleave_k": args.interleave_k,
         "warmup_queries": 20,
         "measured_queries": 180,
         "temperature": 0,
@@ -91,7 +104,7 @@ def main():
         model=args.model,
         dtype="bfloat16",
         tensor_parallel_size=1,
-        enable_prefix_caching=True,
+        enable_prefix_caching=not args.disable_prefix_caching,
         gpu_memory_utilization=args.gpu_memory_utilization,
         max_model_len=args.max_model_len,
         enforce_eager=True,
@@ -106,35 +119,82 @@ def main():
         allowed_token_ids=[yes_id, no_id],
     )
 
+    def score_output(output):
+        if output.metrics is None or output.metrics.first_token_latency <= 0:
+            raise RuntimeError("vLLM did not return valid request metrics")
+        final = output.outputs[0].logprobs[-1]
+        if yes_id not in final or no_id not in final:
+            raise RuntimeError("yes/no missing from returned logprobs")
+        return final[yes_id].logprob - final[no_id].logprob, output.metrics.first_token_latency * 1000
+
+    def run_candidate(row, label_id):
+        prompt = TokensPrompt(prompt_token_ids(tokenizer, row["query"], labels[label_id], args.prompt_variant))
+        started = time.perf_counter()
+        output = llm.generate([prompt], sampling, use_tqdm=False)[0]
+        e2e_ms = (time.perf_counter() - started) * 1000
+        score, ttft_ms = score_output(output)
+        return score, ttft_ms, e2e_ms
+
     def run(row):
-        candidate_ids = row["candidate_ids"][:32]
+        candidate_ids = row["candidate_ids"][:args.candidate_k]
         prompts = [
-            TokensPrompt(prompt_token_ids=prompt_token_ids(tokenizer, row["query"], labels[label_id], "a1_document_last"))
+            TokensPrompt(prompt_token_ids=prompt_token_ids(tokenizer, row["query"], labels[label_id], args.prompt_variant))
             for label_id in candidate_ids
         ]
         started = time.perf_counter()
         outputs = llm.generate(prompts, sampling, use_tqdm=False)
         e2e_ms = (time.perf_counter() - started) * 1000
-        scores = []
-        ttft = []
-        for output in outputs:
-            if output.metrics is None or output.metrics.first_token_latency <= 0:
-                raise RuntimeError("vLLM did not return valid request metrics")
-            final = output.outputs[0].logprobs[-1]
-            if yes_id not in final or no_id not in final:
-                raise RuntimeError("yes/no missing from returned logprobs")
-            ttft.append(output.metrics.first_token_latency * 1000)
-            scores.append(final[yes_id].logprob - final[no_id].logprob)
+        scores, ttft = zip(*(score_output(output) for output in outputs))
         ranking = [item for _, item in sorted(zip(scores, candidate_ids), reverse=True)]
         return ranking, max(ttft), e2e_ms
 
-    for row in rows[:20]:
-        run(row)
+    def ordered_rows(input_rows):
+        rows = list(input_rows)
+        if args.submission_order == "random":
+            random.Random(candidate_meta["seed"]).shuffle(rows)
+        return rows
+
+    def candidate_schedule(input_rows):
+        if args.submission_order in ("grouped", "random"):
+            for row in input_rows:
+                for label_id in row["candidate_ids"][:args.candidate_k]:
+                    yield row, label_id
+            return
+        groups = [input_rows[index:index + args.interleave_k] for index in range(0, len(input_rows), args.interleave_k)]
+        for group in groups:
+            for offset in range(args.candidate_k):
+                for row in group:
+                    yield row, row["candidate_ids"][offset]
+
+    def run_candidate_rows(input_rows):
+        scores = {row["query_id"]: [] for row in input_rows}
+        elapsed = {row["query_id"]: 0.0 for row in input_rows}
+        ttfts = {row["query_id"]: [] for row in input_rows}
+        for row, label_id in candidate_schedule(input_rows):
+            score, ttft_ms, e2e_ms = run_candidate(row, label_id)
+            scores[row["query_id"]].append((score, label_id))
+            elapsed[row["query_id"]] += e2e_ms
+            ttfts[row["query_id"]].append(ttft_ms)
+        measured = []
+        for row in input_rows:
+            ranking = [label_id for _, label_id in sorted(scores[row["query_id"]], reverse=True)]
+            measured.append((ranking, max(ttfts[row["query_id"]]), elapsed[row["query_id"]]))
+        return measured
+
+    rows = ordered_rows(rows)
+    if args.submission_mode == "candidate":
+        run_candidate_rows(rows[:20])
+    else:
+        for row in rows[:20]:
+            run(row)
     warmup_metrics = llm.get_metrics()
     warmup_queries = metric_value(warmup_metrics, "vllm:prefix_cache_queries", (int, float))
     warmup_hits = metric_value(warmup_metrics, "vllm:prefix_cache_hits", (int, float))
     measured_started = time.perf_counter()
-    measured = [run(row) for row in rows[20:]]
+    if args.submission_mode == "candidate":
+        measured = run_candidate_rows(rows[20:])
+    else:
+        measured = [run(row) for row in rows[20:]]
     measured_seconds = time.perf_counter() - measured_started
 
     snapshot = llm.get_metrics()
@@ -166,7 +226,7 @@ def main():
         "metrics": {
             "quality": quality,
             "latency_ms": {"ttft_p50": ttft["p50"], "ttft_p95": ttft["p95"], "ttft_p99": ttft["p99"], "e2e_p50": e2e["p50"], "e2e_p95": e2e["p95"], "e2e_p99": e2e["p99"]},
-            "throughput": {"req_per_s": 180 / measured_seconds, "candidates_scored_per_s": 180 * 32 / measured_seconds},
+            "throughput": {"req_per_s": 180 / measured_seconds, "candidates_scored_per_s": 180 * args.candidate_k / measured_seconds},
             "resource": {"peak_mem_gb": gpu_memory_gb(), "prefix_cache_hit_rate": hit_rate, "kv_cache_usage_perc": kv_usage, "kv_cache_used_blocks": kv_usage * num_blocks},
         },
     }
