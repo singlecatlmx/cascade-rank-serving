@@ -46,6 +46,8 @@ def main():
     parser.add_argument("--submission-order", choices=["grouped", "random", "interleave"], default="grouped")
     parser.add_argument("--interleave-k", type=int, default=2)
     parser.add_argument("--candidate-k", type=int, default=32)
+    parser.add_argument("--decode-tokens", type=int, default=1)
+    parser.add_argument("--no-allowed-token-ids", action="store_true")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     parser.add_argument("--max-model-len", type=int, default=640)
     args = parser.parse_args()
@@ -61,6 +63,8 @@ def main():
         raise RuntimeError("interleave-k must be positive")
     if not 1 <= args.candidate_k <= 64:
         raise RuntimeError("candidate-k must be between 1 and 64")
+    if args.decode_tokens <= 0:
+        raise RuntimeError("decode-tokens must be positive")
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise RuntimeError(f"expected one visible GPU, found {torch.cuda.device_count()}")
 
@@ -78,16 +82,18 @@ def main():
         "disable_log_stats": False,
         "prompt_variant": args.prompt_variant,
         "candidate_k": args.candidate_k,
+        "decode_tokens": args.decode_tokens,
+        "allowed_token_ids_enabled": not args.no_allowed_token_ids,
         "submission": f"{args.submission_mode} per generate call",
         "submission_order": args.submission_order,
         "interleave_k": args.interleave_k,
         "warmup_queries": 20,
         "measured_queries": 180,
         "temperature": 0,
-        "max_tokens": 1,
+        "max_tokens": args.decode_tokens,
         "logprobs": 2,
         "logprob_token_ids": ["yes", "no"],
-        "allowed_token_ids": ["yes", "no"],
+        "allowed_token_ids": None if args.no_allowed_token_ids else ["yes", "no"],
         "seed": candidate_meta["seed"],
         "labels": args.labels,
         "candidates": Path(args.candidates).name,
@@ -113,10 +119,10 @@ def main():
     )
     sampling = SamplingParams(
         temperature=0,
-        max_tokens=1,
+        max_tokens=args.decode_tokens,
         logprobs=2,
         logprob_token_ids=[yes_id, no_id],
-        allowed_token_ids=[yes_id, no_id],
+        allowed_token_ids=None if args.no_allowed_token_ids else [yes_id, no_id],
     )
 
     def score_output(output):
