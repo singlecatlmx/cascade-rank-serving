@@ -48,6 +48,8 @@ def main():
     parser.add_argument("--candidate-k", type=int, default=32)
     parser.add_argument("--decode-tokens", type=int, default=1)
     parser.add_argument("--no-allowed-token-ids", action="store_true")
+    parser.add_argument("--quantization")
+    parser.add_argument("--kv-cache-dtype", default="auto")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     parser.add_argument("--max-model-len", type=int, default=640)
     args = parser.parse_args()
@@ -73,7 +75,8 @@ def main():
         "variant": args.variant,
         "model": args.model,
         "dtype": "bfloat16",
-        "quantization": None,
+        "quantization": args.quantization,
+        "kv_cache_dtype": args.kv_cache_dtype,
         "tensor_parallel_size": 1,
         "enable_prefix_caching": not args.disable_prefix_caching,
         "gpu_memory_utilization": args.gpu_memory_utilization,
@@ -116,6 +119,8 @@ def main():
         enforce_eager=True,
         disable_log_stats=False,
         seed=candidate_meta["seed"],
+        quantization=args.quantization,
+        kv_cache_dtype=args.kv_cache_dtype,
     )
     sampling = SamplingParams(
         temperature=0,
