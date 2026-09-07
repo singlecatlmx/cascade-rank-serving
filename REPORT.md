@@ -63,12 +63,16 @@ single-GPU seconds per 1,000 queries. This is a recombination of measured
 points, not a synthetic load curve; a knee point is therefore intentionally
 left unset until a concurrency sweep is run.
 
-The service smoke on one RTX 5090 also exercises the operational degradation
-path: a 1,000 ms request completed without degradation (~87 ms in the warm
-sample), while a 1 ms budget returned recall top-25 with
-`fallback_reason=timeout` (~43 ms). The endpoint exposes this flag so a
-caller can measure MAP loss on a replay of the frozen evaluation set rather
-than hiding overload behind a 500 response.
+The service smoke on one RTX 5090 exercises the operational degradation path
+on the frozen 180-query evaluation slice. With `concurrency=1` and a 150 ms
+end-to-end budget, P99 was 99.4 ms, degradation rate was 0%, and paired
+MAP@25 loss was -0.0023 (`results/d7_service_smoke_20260907-1209.json`). A
+separate 50 ms stress budget forced the fallback on 100% of requests and
+reduced MAP@25 from 0.3669 to 0.2050, a paired loss of 0.1618
+(`results/d7_service_smoke_20260907-1210.json`). This separates the formal
+150 ms SLA observation from the deliberately overloaded quality trade-off.
+The endpoint exposes the flag so callers can measure this trade-off instead
+of hiding overload behind a 500 response.
 
 ## 9. Reproduction
 
@@ -77,7 +81,8 @@ conda activate py312
 ./scripts/run_e4_scoring_paths.sh
 ./scripts/run_e5_quantization.sh
 python -m src.serve.serve --port 8000
-python -m src.serve.bench_serve --requests 100 --concurrency 4
+python -m src.serve.bench_serve --requests 100 --concurrency 4 --timeout-ms 150
+python -m src.serve.bench_serve --eval-jsonl data/eval_set_v1.jsonl --timeout-ms 150 --baseline-timeout-ms 1000 --concurrency 1 --output results/d7_service_smoke_YYYYMMDD-HHMMSS.json
 ./scripts/run_capacity_plan.sh
 ```
 

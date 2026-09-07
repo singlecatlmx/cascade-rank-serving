@@ -1,0 +1,35 @@
+{
+  "git_commit": "072348b5f99da2549631f79ed1d429679a481c83-dirty",
+  "vllm_version": "0.25.1",
+  "gpu": "NVIDIA GeForce RTX 5090 x2",
+  "timestamp": "20260907-121112",
+  "config": {
+    "url": "http://127.0.0.1:8000/v1/rank",
+    "requests": 180,
+    "concurrency": 1,
+    "timeout_ms": 50,
+    "baseline_timeout_ms": 1000,
+    "eval_jsonl": "data/eval_set_v1.jsonl",
+    "warmup_requests": 20
+  },
+  "metrics": {
+    "requests": 180,
+    "concurrency": 1,
+    "qps": 7.704800773873679,
+    "latency_ms": {
+      "p50": 52.65086598228663,
+      "p95": 54.63003204204142,
+      "p99": 55.510658072307706,
+      "mean": 41.51199355967239
+    },
+    "degraded_rate": 1.0,
+    "quality": {
+      "baseline_map_at_25": 0.36685457977657465,
+      "target_map_at_25": 0.205045920768831,
+      "paired_map_loss": 0.16180865900774366,
+      "baseline_degraded_rate": 0.005555555555555556,
+      "target_degraded_rate": 1.0,
+      "target_map_at_25_degraded": 0.205045920768831
+    }
+  }
+}

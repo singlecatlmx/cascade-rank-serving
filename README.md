@@ -34,7 +34,14 @@ The measured E1 gain is below the planned 2x gate, so prefix caching is reported
 The delivery demo includes a timeout degradation path. On the dual-card host,
 the service runs as a single-card instance; the timeout is an end-to-end
 budget, and an expired rerank returns the already-computed `recall_top25`
-without recomputing embeddings. Capacity planning is recorded in
+without recomputing embeddings. On the frozen 180-query measurement set,
+the 150 ms budget stayed within P99 99.4 ms and triggered no degradation;
+the paired MAP@25 delta was -0.0023. A deliberately tight 50 ms budget
+triggered fallback on 100% of requests and measured MAP@25 loss 0.1618
+(0.3669 baseline to 0.2050 fallback). The two result files are
+[`d7_service_smoke_20260907-1209.json`](results/d7_service_smoke_20260907-1209.json)
+and [`d7_service_smoke_20260907-1210.json`](results/d7_service_smoke_20260907-1210.json).
+Capacity planning is recorded in
 [`results/d7_capacity_20260907-091600_01f0f564.json`](results/d7_capacity_20260907-091600_01f0f564.json)
 and [`assets/capacity_pareto.png`](assets/capacity_pareto.png); it deliberately
 reports only observed benchmark points and leaves the concurrency knee point
@@ -72,7 +79,7 @@ python -m src.serve.bench_serve --url http://127.0.0.1:8000/v1/rank --requests 1
 python -m src.serve.bench_serve \
   --url http://127.0.0.1:8000/v1/rank \
   --eval-jsonl data/eval_set_v1.jsonl \
-  --timeout-ms 150 --baseline-timeout-ms 1000 \
+  --timeout-ms 150 --baseline-timeout-ms 1000 --concurrency 1 \
   --output results/d7_service_smoke_YYYYMMDD-HHMMSS.json
 ```
 
