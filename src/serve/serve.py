@@ -117,8 +117,11 @@ def create_app(args):
         query = build_query(request)
         fallback = False
         fallback_reason = None
+        rerank_task = asyncio.create_task(score_with_lock(query))
         try:
-            ranked, recall_ms, rerank_ms = await asyncio.wait_for(score_with_lock(query), max(request.timeout_ms, 1) / 1000)
+            ranked, recall_ms, rerank_ms = await asyncio.wait_for(
+                asyncio.shield(rerank_task), max(request.timeout_ms, 1) / 1000
+            )
         except asyncio.TimeoutError:
             fallback = True
             fallback_reason = "timeout"
