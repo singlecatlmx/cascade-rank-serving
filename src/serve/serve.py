@@ -27,10 +27,12 @@ def read_jsonl(path):
 
 
 def build_query(request):
-    return (
-        f"Question: {request.query}\nCorrect Answer: {request.correct_answer}\n"
-        f"Incorrect Answer: {request.incorrect_answer}"
-    )
+    parts = [request.query]
+    if request.correct_answer:
+        parts.append(f"Correct Answer: {request.correct_answer}")
+    if request.incorrect_answer:
+        parts.append(f"Incorrect Answer: {request.incorrect_answer}")
+    return "\n".join(parts)
 
 
 def create_app(args):

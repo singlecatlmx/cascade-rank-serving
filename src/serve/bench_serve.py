@@ -54,6 +54,7 @@ async def main():
     if args.requests <= 0 or args.concurrency <= 0 or args.timeout_ms <= 0:
         raise SystemExit("requests, concurrency, and timeout-ms must be positive")
     eval_rows = read_eval(args.eval_jsonl) if args.eval_jsonl else None
+    measured_eval_rows = eval_rows[20:] if eval_rows else None
     payload = {"query": "What is 20% of 50?", "correct_answer": "10", "incorrect_answer": "20"}
     semaphore = asyncio.Semaphore(args.concurrency)
 
@@ -72,9 +73,9 @@ async def main():
         for _ in range(20):
             await send(client, {**payload, "timeout_ms": args.timeout_ms})
         started = time.perf_counter()
-        if eval_rows:
-            baseline = await asyncio.gather(*(send_eval(client, row, args.baseline_timeout_ms) for row in eval_rows))
-            measured = await asyncio.gather(*(send_eval(client, row, args.timeout_ms) for row in eval_rows))
+        if measured_eval_rows:
+            baseline = await asyncio.gather(*(send_eval(client, row, args.baseline_timeout_ms) for row in measured_eval_rows))
+            measured = await asyncio.gather(*(send_eval(client, row, args.timeout_ms) for row in measured_eval_rows))
         else:
             baseline = None
             measured = await asyncio.gather(*(send(client, {**payload, "timeout_ms": args.timeout_ms}) for _ in range(args.requests)))
@@ -89,14 +90,17 @@ async def main():
         "degraded_rate": sum(degraded) / len(degraded),
     }
     if eval_rows:
-        gold = [row["actual"] for row in eval_rows]
+        gold = [row["actual"] for row in measured_eval_rows]
         baseline_maps = [map_at_k([item["label_id"] for item in result["results"]], gold[index], 25) for index, (_, result) in enumerate(baseline)]
         target_maps = [map_at_k([item["label_id"] for item in result["results"]], gold[index], 25) for index, (_, result) in enumerate(measured)]
+        baseline_degraded = [result["degraded"] for _, result in baseline]
         degraded_maps = [value for value, flag in zip(target_maps, degraded) if flag]
         metrics["quality"] = {
             "baseline_map_at_25": sum(baseline_maps) / len(baseline_maps),
             "target_map_at_25": sum(target_maps) / len(target_maps),
             "paired_map_loss": sum(baseline_maps) / len(baseline_maps) - sum(target_maps) / len(target_maps),
+            "baseline_degraded_rate": sum(baseline_degraded) / len(baseline_degraded),
+            "target_degraded_rate": sum(degraded) / len(degraded),
             "target_map_at_25_degraded": sum(degraded_maps) / len(degraded_maps) if degraded_maps else None,
         }
     result = {
