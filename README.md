@@ -30,6 +30,14 @@ The service keeps the 4,791-label pool in a GPU matrix and uses brute-force retr
 
 The measured E1 gain is below the planned 2x gate, so prefix caching is reported as an optimization with a bounded benefit rather than presented as a fabricated win. BF16 remains the default; KV-FP8 is an explicit feature flag.
 
+The delivery demo includes a timeout degradation path. In a dual-card host
+smoke, a normal 1,000 ms request returned in ~87 ms; a 1 ms budget returned
+`recall_top25` with `degraded=true` in ~43 ms. Capacity planning is recorded in
+[`results/d7_capacity_20260907-091600_01f0f564.json`](results/d7_capacity_20260907-091600_01f0f564.json)
+and [`assets/capacity_pareto.png`](assets/capacity_pareto.png); it deliberately
+reports only observed benchmark points and leaves the concurrency knee point
+unset.
+
 ## Run The Service
 
 ```bash
@@ -66,6 +74,7 @@ All benchmark commands use the frozen 200-query evaluation set and discard the f
 ```bash
 ./scripts/run_e4_scoring_paths.sh
 ./scripts/run_e5_quantization.sh
+./scripts/run_capacity_plan.sh
 ```
 
 ## Environment

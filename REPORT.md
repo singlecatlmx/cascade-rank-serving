@@ -52,7 +52,25 @@ The earlier D0-B probes found `gptq_marlin` and `awq_marlin` falling back to gen
 
 The delivery path favors one-card BF16 inference with a 32-candidate default, an optional 64-candidate setting, and explicit `--kv-cache-dtype fp8`. The API exposes recall and rerank timing, candidate count, and a timeout fallback so the benchmark numbers map to an operational search workflow.
 
-## 8. Reproduction
+## 8. Latency Budget and Capacity Plan
+
+`src/serve/capacity.py` recombines the formal E1/E4/E5 JSONs into
+`results/d7_capacity_20260907-091600_01f0f564.json` and
+`assets/capacity_pareto.png`. Among the observed single-card points, the best
+quality under each P99 budget (150/200/300 ms) is FP8 weights + KV-FP8:
+MAP@25 `0.3977`, P99 `57.3 ms`, and `14.25 req/s`, equivalent to `70.2`
+single-GPU seconds per 1,000 queries. This is a recombination of measured
+points, not a synthetic load curve; a knee point is therefore intentionally
+left unset until a concurrency sweep is run.
+
+The service smoke on one RTX 5090 also exercises the operational degradation
+path: a 1,000 ms request completed without degradation (~87 ms in the warm
+sample), while a 1 ms budget returned recall top-25 with
+`fallback_reason=timeout` (~43 ms). The endpoint exposes this flag so a
+caller can measure MAP loss on a replay of the frozen evaluation set rather
+than hiding overload behind a 500 response.
+
+## 9. Reproduction
 
 ```bash
 conda activate py312

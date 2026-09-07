@@ -1,0 +1,175 @@
+{
+  "git_commit": "c66a6446432cfeab7545ca1ec6b5f1d88bee249d",
+  "vllm_version": "0.25.1",
+  "gpu": "not applicable (result recombination; no inference run)",
+  "timestamp": "20260907-091600",
+  "config": {
+    "stage": "d7",
+    "variant": "capacity_plan",
+    "source_files": [
+      "e1_a0_20260906-083104_76fbe0c5.json",
+      "e1_a1_20260906-083058_a63fd7c8.json",
+      "e1_a2_20260906-083147_d96795f2.json",
+      "e4_d0_20260906-084114_4a18855d.json",
+      "e4_d1_20260906-084034_eb42238c.json",
+      "e4_d2_20260906-084148_95fb6596.json",
+      "e5_bf16_20260906-084932_14485910.json",
+      "e5_fp8_20260906-084934_c127d47c.json",
+      "e5_fp8_kvfp8_20260906-085026_0a5a7c37.json"
+    ],
+    "budgets_ms": [
+      150,
+      200,
+      300
+    ],
+    "card_cost_yuan_per_hour": 2.43,
+    "note": "Observed single-card benchmark points only; no synthetic load curve or unrun topology result."
+  },
+  "observed_points": [
+    {
+      "name": "a0_cache_on",
+      "source": "e1_a0_20260906-083104_76fbe0c5.json",
+      "map_at_25": 0.1985827209664929,
+      "p99_ms": 119.57984495675196,
+      "req_per_s": 10.818071028161407,
+      "candidates_scored_per_s": 692.3565458023301,
+      "gpu_seconds_per_1000_queries": 92.43792145538868,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "a1_cache_on",
+      "source": "e1_a1_20260906-083058_a63fd7c8.json",
+      "map_at_25": 0.3940141620075831,
+      "p99_ms": 51.46632650401443,
+      "req_per_s": 15.650559197297232,
+      "candidates_scored_per_s": 1001.6357886270229,
+      "gpu_seconds_per_1000_queries": 63.89548049968046,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "a2_cache_off",
+      "source": "e1_a2_20260906-083147_d96795f2.json",
+      "map_at_25": 0.39628791294800064,
+      "p99_ms": 128.28472633147612,
+      "req_per_s": 9.160945188673184,
+      "candidates_scored_per_s": 586.3004920750838,
+      "gpu_seconds_per_1000_queries": 109.15904193340491,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "d0_full_decode",
+      "source": "e4_d0_20260906-084114_4a18855d.json",
+      "map_at_25": 0.1106864913624852,
+      "p99_ms": 331.922370713437,
+      "req_per_s": 3.7816769258935987,
+      "candidates_scored_per_s": 242.02732325719032,
+      "gpu_seconds_per_1000_queries": 264.43295384459714,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "d1_one_token",
+      "source": "e4_d1_20260906-084034_eb42238c.json",
+      "map_at_25": 0.39260888250447745,
+      "p99_ms": 52.94700038153679,
+      "req_per_s": 15.270677465275151,
+      "candidates_scored_per_s": 977.3233577776097,
+      "gpu_seconds_per_1000_queries": 65.48497944992657,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "d2_allowed_token_ids",
+      "source": "e4_d2_20260906-084148_95fb6596.json",
+      "map_at_25": 0.3925229036684986,
+      "p99_ms": 51.49089137557895,
+      "req_per_s": 15.707002192664508,
+      "candidates_scored_per_s": 1005.2481403305285,
+      "gpu_seconds_per_1000_queries": 63.665872566505435,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "bf16",
+      "source": "e5_bf16_20260906-084932_14485910.json",
+      "map_at_25": 0.3953006814462764,
+      "p99_ms": 61.97743743890898,
+      "req_per_s": 15.254710006937808,
+      "candidates_scored_per_s": 976.3014404440197,
+      "gpu_seconds_per_1000_queries": 65.55352409486659,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "fp8",
+      "source": "e5_fp8_20260906-084934_c127d47c.json",
+      "map_at_25": 0.3842849271388554,
+      "p99_ms": 75.04787408164708,
+      "req_per_s": 14.199522575162261,
+      "candidates_scored_per_s": 908.7694448103847,
+      "gpu_seconds_per_1000_queries": 70.42490299985123,
+      "peak_mem_gb": 27.9140625
+    },
+    {
+      "name": "fp8_kv_fp8",
+      "source": "e5_fp8_kvfp8_20260906-085026_0a5a7c37.json",
+      "map_at_25": 0.39766832420341197,
+      "p99_ms": 57.34287428087555,
+      "req_per_s": 14.248286800056135,
+      "candidates_scored_per_s": 911.8903552035927,
+      "gpu_seconds_per_1000_queries": 70.18387642197519,
+      "peak_mem_gb": 28.314453125
+    }
+  ],
+  "pareto_frontier": [
+    {
+      "name": "a1_cache_on",
+      "source": "e1_a1_20260906-083058_a63fd7c8.json",
+      "map_at_25": 0.3940141620075831,
+      "p99_ms": 51.46632650401443,
+      "req_per_s": 15.650559197297232,
+      "candidates_scored_per_s": 1001.6357886270229,
+      "gpu_seconds_per_1000_queries": 63.89548049968046,
+      "peak_mem_gb": 27.9453125
+    },
+    {
+      "name": "fp8_kv_fp8",
+      "source": "e5_fp8_kvfp8_20260906-085026_0a5a7c37.json",
+      "map_at_25": 0.39766832420341197,
+      "p99_ms": 57.34287428087555,
+      "req_per_s": 14.248286800056135,
+      "candidates_scored_per_s": 911.8903552035927,
+      "gpu_seconds_per_1000_queries": 70.18387642197519,
+      "peak_mem_gb": 28.314453125
+    }
+  ],
+  "best_under_budget": {
+    "150": {
+      "name": "fp8_kv_fp8",
+      "source": "e5_fp8_kvfp8_20260906-085026_0a5a7c37.json",
+      "map_at_25": 0.39766832420341197,
+      "p99_ms": 57.34287428087555,
+      "req_per_s": 14.248286800056135,
+      "candidates_scored_per_s": 911.8903552035927,
+      "gpu_seconds_per_1000_queries": 70.18387642197519,
+      "peak_mem_gb": 28.314453125
+    },
+    "200": {
+      "name": "fp8_kv_fp8",
+      "source": "e5_fp8_kvfp8_20260906-085026_0a5a7c37.json",
+      "map_at_25": 0.39766832420341197,
+      "p99_ms": 57.34287428087555,
+      "req_per_s": 14.248286800056135,
+      "candidates_scored_per_s": 911.8903552035927,
+      "gpu_seconds_per_1000_queries": 70.18387642197519,
+      "peak_mem_gb": 28.314453125
+    },
+    "300": {
+      "name": "fp8_kv_fp8",
+      "source": "e5_fp8_kvfp8_20260906-085026_0a5a7c37.json",
+      "map_at_25": 0.39766832420341197,
+      "p99_ms": 57.34287428087555,
+      "req_per_s": 14.248286800056135,
+      "candidates_scored_per_s": 911.8903552035927,
+      "gpu_seconds_per_1000_queries": 70.18387642197519,
+      "peak_mem_gb": 28.314453125
+    }
+  },
+  "knee_point": null
+}
