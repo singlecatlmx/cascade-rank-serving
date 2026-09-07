@@ -78,13 +78,16 @@ def create_app(args):
         allowed_token_ids=[yes_id, no_id],
     )
     lock = asyncio.Lock()
+    active_rerank_task = None
 
-    def rank(query):
+    def recall(query, candidate_k):
         recall_started = time.perf_counter()
         query_embedding = embed([f"Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: {query}"])
-        _, top_indices = torch.topk(query_embedding @ label_embeddings.T, k=args.candidate_k)
+        _, top_indices = torch.topk(query_embedding @ label_embeddings.T, k=candidate_k)
         candidate_ids = [label_ids[index] for index in top_indices[0].cpu().tolist()]
-        recall_ms = (time.perf_counter() - recall_started) * 1000
+        return candidate_ids, (time.perf_counter() - recall_started) * 1000
+
+    def rank(query, candidate_ids):
         rerank_started = time.perf_counter()
         prompts = [
             TokensPrompt(prompt_token_ids=prompt_token_ids(reranker_tokenizer, query, labels[label_id], "a1_document_last"))
@@ -99,11 +102,11 @@ def create_app(args):
             if yes_id not in logprobs or no_id not in logprobs:
                 raise RuntimeError("yes/no missing from returned logprobs")
             scored.append((logprobs[yes_id].logprob - logprobs[no_id].logprob, label_id))
-        return [label_id for _, label_id in sorted(scored, reverse=True)], recall_ms, (time.perf_counter() - rerank_started) * 1000
+        return [label_id for _, label_id in sorted(scored, reverse=True)], (time.perf_counter() - rerank_started) * 1000
 
-    async def score_with_lock(query):
+    async def score_with_lock(query, candidate_ids):
         async with lock:
-            return await asyncio.to_thread(rank, query)
+            return await asyncio.to_thread(rank, query, candidate_ids)
 
     app = FastAPI(title="Cascade Rank Serving", version="0.1.0")
 
@@ -113,33 +116,47 @@ def create_app(args):
 
     @app.post("/v1/rank")
     async def rank_endpoint(request: RankRequest):
+        nonlocal active_rerank_task
         started = time.perf_counter()
         query = build_query(request)
+        candidate_ids, recall_ms = await asyncio.to_thread(recall, query, args.candidate_k)
         fallback = False
         fallback_reason = None
-        rerank_task = asyncio.create_task(score_with_lock(query))
-        try:
-            ranked, recall_ms, rerank_ms = await asyncio.wait_for(
-                asyncio.shield(rerank_task), max(request.timeout_ms, 1) / 1000
-            )
-        except asyncio.TimeoutError:
+        remaining_ms = request.timeout_ms - (time.perf_counter() - started) * 1000
+        if remaining_ms <= 0:
             fallback = True
             fallback_reason = "timeout"
-            recall_started = time.perf_counter()
-            query_embedding = await asyncio.to_thread(embed, [f"Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: {query}"])
-            _, top_indices = torch.topk(query_embedding @ label_embeddings.T, k=25)
-            ranked = [label_ids[index] for index in top_indices[0].cpu().tolist()]
-            recall_ms = (time.perf_counter() - recall_started) * 1000
+            ranked = candidate_ids[:25]
             rerank_ms = 0.0
-        except RuntimeError:
+        elif active_rerank_task is not None and not active_rerank_task.done():
             fallback = True
-            fallback_reason = "rerank_error"
-            recall_started = time.perf_counter()
-            query_embedding = await asyncio.to_thread(embed, [f"Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: {query}"])
-            _, top_indices = torch.topk(query_embedding @ label_embeddings.T, k=25)
-            ranked = [label_ids[index] for index in top_indices[0].cpu().tolist()]
-            recall_ms = (time.perf_counter() - recall_started) * 1000
+            fallback_reason = "overload"
+            ranked = candidate_ids[:25]
             rerank_ms = 0.0
+        else:
+            rerank_task = asyncio.create_task(score_with_lock(query, candidate_ids))
+            active_rerank_task = rerank_task
+
+            def finish(task):
+                nonlocal active_rerank_task
+                if active_rerank_task is task:
+                    active_rerank_task = None
+                if not task.cancelled():
+                    task.exception()
+
+            rerank_task.add_done_callback(finish)
+            try:
+                ranked, rerank_ms = await asyncio.wait_for(asyncio.shield(rerank_task), remaining_ms / 1000)
+            except asyncio.TimeoutError:
+                fallback = True
+                fallback_reason = "timeout"
+                ranked = candidate_ids[:25]
+                rerank_ms = 0.0
+            except RuntimeError:
+                fallback = True
+                fallback_reason = "rerank_error"
+                ranked = candidate_ids[:25]
+                rerank_ms = 0.0
         total_ms = (time.perf_counter() - started) * 1000
         return {
             "results": [{"label_id": label_id, "label": labels[label_id], "rank": index + 1} for index, label_id in enumerate(ranked[:25])],

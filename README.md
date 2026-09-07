@@ -20,7 +20,8 @@ The service keeps the 4,791-label pool in a GPU matrix and uses brute-force retr
 
 | Finding | Measurement |
 |---|---:|
-| Document-at-end prefix layout vs document-at-start | 1.45x candidates/s, 0.847 vs 0.407 cache hit |
+| Document-at-end vs document-at-start | 1.45x candidates/s, 0.847 vs 0.407 cache hit |
+| Controlled prefix-cache effect (A2 → A1) | 1.71x candidates/s, 0.000 → 0.847 cache hit |
 | Full 16-token decode vs one-token scoring | 242 vs 977 candidates/s |
 | `allowed_token_ids=[yes,no]` overhead | 1,005 vs 977 candidates/s |
 | BF16 vs online FP8 | 976 vs 909 candidates/s |
@@ -30,9 +31,10 @@ The service keeps the 4,791-label pool in a GPU matrix and uses brute-force retr
 
 The measured E1 gain is below the planned 2x gate, so prefix caching is reported as an optimization with a bounded benefit rather than presented as a fabricated win. BF16 remains the default; KV-FP8 is an explicit feature flag.
 
-The delivery demo includes a timeout degradation path. In a dual-card host
-smoke, a normal 1,000 ms request returned in ~87 ms; a 1 ms budget returned
-`recall_top25` with `degraded=true` in ~43 ms. Capacity planning is recorded in
+The delivery demo includes a timeout degradation path. On the dual-card host,
+the service runs as a single-card instance; the timeout is an end-to-end
+budget, and an expired rerank returns the already-computed `recall_top25`
+without recomputing embeddings. Capacity planning is recorded in
 [`results/d7_capacity_20260907-091600_01f0f564.json`](results/d7_capacity_20260907-091600_01f0f564.json)
 and [`assets/capacity_pareto.png`](assets/capacity_pareto.png); it deliberately
 reports only observed benchmark points and leaves the concurrency knee point
@@ -59,12 +61,19 @@ curl -s http://127.0.0.1:8000/v1/rank \
   -d '{"query":"What is 20% of 50?","correct_answer":"10","incorrect_answer":"20"}'
 ```
 
-Each response includes top-25 labels, total/recall/rerank milliseconds, candidate count, and whether the timeout fallback returned recall results.
+Each response includes top-25 labels, total/recall/rerank milliseconds, candidate count, and whether the timeout fallback returned recall results. The embedding stage uses Transformers; vLLM is used for the reranker.
 
 Optional service pressure test:
 
 ```bash
 python -m src.serve.bench_serve --url http://127.0.0.1:8000/v1/rank --requests 100 --concurrency 4
+
+# Frozen-eval paired quality/degradation report
+python -m src.serve.bench_serve \
+  --url http://127.0.0.1:8000/v1/rank \
+  --eval-jsonl data/eval_set_v1.jsonl \
+  --timeout-ms 150 --baseline-timeout-ms 1000 \
+  --output results/d7_service_smoke_YYYYMMDD-HHMMSS.json
 ```
 
 ## Reproduce Benchmarks

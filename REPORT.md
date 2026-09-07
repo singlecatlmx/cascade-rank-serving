@@ -12,7 +12,7 @@ The target machine has two RTX 5090 cards (`sm_120`) with P2P disabled and measu
 
 ## 3. System
 
-The offline step embeds the label pool once. Online requests perform a brute-force matrix multiply, retain 32 or 64 candidates, and score them with the merged LoRA Reranker-0.6B. The FastAPI demo returns stage timings and falls back to recall top-25 when reranking exceeds the request timeout.
+The offline step embeds the label pool once with a Transformers embedding model. Online requests perform a brute-force matrix multiply, retain 32 or 64 candidates, and score them with the merged LoRA Reranker-0.6B through vLLM. The FastAPI demo returns stage timings and falls back to the already-computed recall top-25 when reranking exceeds the end-to-end request budget.
 
 ## 4. E1: Prompt Layout and Prefix Cache
 
@@ -24,7 +24,7 @@ Formal group-mode results:
 | A1, document last | 0.847 | 1,001.64 | 51.47 ms |
 | A2, cache off | 0.000 | 586.30 | 128.28 ms |
 
-A1 is 1.45x A0. The hit-rate separation validates prompt-prefix placement, but the 2x G4 gate is not met. Candidate-by-candidate diagnostic runs were also retained; they showed Python request overhead masking cache savings, so they are not used for the formal gate.
+A1 is 1.45x A0. The controlled cache comparison A2→A1 is 1.71x; the hit-rate separation validates prompt-prefix placement, but the 2x G4 gate is not met. Candidate-by-candidate diagnostic runs were also retained; they showed Python request overhead masking cache savings, so they are not used for the formal gate.
 
 ## 5. E4: Scoring Path
 
@@ -78,6 +78,7 @@ conda activate py312
 ./scripts/run_e5_quantization.sh
 python -m src.serve.serve --port 8000
 python -m src.serve.bench_serve --requests 100 --concurrency 4
+./scripts/run_capacity_plan.sh
 ```
 
 No E2/E3 run is presented as a headline result because G4 did not pass and the project deliberately avoids spending GPU time on a cache mainline whose measured benefit is below the decision threshold.
