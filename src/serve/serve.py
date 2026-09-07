@@ -55,6 +55,8 @@ def create_app(args):
     reranker_tokenizer = AutoTokenizer.from_pretrained(args.reranker_model, local_files_only=True)
     yes_id = reranker_tokenizer.convert_tokens_to_ids("yes")
     no_id = reranker_tokenizer.convert_tokens_to_ids("no")
+    if reranker_tokenizer.encode("yes", add_special_tokens=False) != [yes_id] or reranker_tokenizer.encode("no", add_special_tokens=False) != [no_id]:
+        raise RuntimeError("yes/no must each be one token")
     reranker = LLM(
         model=args.reranker_model,
         dtype="bfloat16",
@@ -114,10 +116,21 @@ def create_app(args):
         started = time.perf_counter()
         query = build_query(request)
         fallback = False
+        fallback_reason = None
         try:
             ranked, recall_ms, rerank_ms = await asyncio.wait_for(score_with_lock(query), max(request.timeout_ms, 1) / 1000)
-        except (asyncio.TimeoutError, RuntimeError):
+        except asyncio.TimeoutError:
             fallback = True
+            fallback_reason = "timeout"
+            recall_started = time.perf_counter()
+            query_embedding = await asyncio.to_thread(embed, [f"Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: {query}"])
+            _, top_indices = torch.topk(query_embedding @ label_embeddings.T, k=25)
+            ranked = [label_ids[index] for index in top_indices[0].cpu().tolist()]
+            recall_ms = (time.perf_counter() - recall_started) * 1000
+            rerank_ms = 0.0
+        except RuntimeError:
+            fallback = True
+            fallback_reason = "rerank_error"
             recall_started = time.perf_counter()
             query_embedding = await asyncio.to_thread(embed, [f"Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: {query}"])
             _, top_indices = torch.topk(query_embedding @ label_embeddings.T, k=25)
@@ -129,6 +142,7 @@ def create_app(args):
             "results": [{"label_id": label_id, "label": labels[label_id], "rank": index + 1} for index, label_id in enumerate(ranked[:25])],
             "degraded": fallback,
             "fallback": "recall_top25" if fallback else None,
+            "fallback_reason": fallback_reason if fallback else None,
             "timing_ms": {"total": round(total_ms, 3), "recall": round(recall_ms, 3), "rerank": round(rerank_ms, 3)},
             "candidate_count": args.candidate_k,
             "kv_cache_dtype": args.kv_cache_dtype,
@@ -148,6 +162,10 @@ def main():
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
+    if not 1 <= args.candidate_k <= 64:
+        raise SystemExit("candidate-k must be between 1 and 64")
+    if args.kv_cache_dtype not in {"auto", "fp8"}:
+        raise SystemExit("kv-cache-dtype must be auto or fp8")
     import uvicorn
 
     uvicorn.run(create_app(args), host=args.host, port=args.port)
